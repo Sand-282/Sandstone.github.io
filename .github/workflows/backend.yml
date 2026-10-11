@@ -1,0 +1,55 @@
+name: Publish secure commission system
+
+# Run manually after adding the Cloudflare and owner secrets in repository settings.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: commission-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - name: Get website source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Check required setup
+        run: node scripts/deploy-cloudflare.mjs --check
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL || 'cjgsinclare@gmail.com' }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          PUBLIC_PAGES_ORIGIN: https://sand-282.github.io
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Build secured application
+        run: npm run build
+      - name: Check deployment helper
+        run: node --test scripts/deploy-cloudflare.test.mjs
+      - name: Publish to Cloudflare
+        run: node scripts/deploy-cloudflare.mjs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL || 'cjgsinclare@gmail.com' }}
+          EMAIL_FROM: ${{ vars.EMAIL_FROM }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          PUBLIC_PAGES_ORIGIN: https://sand-282.github.io
