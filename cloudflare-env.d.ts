@@ -4,6 +4,7 @@ declare namespace Cloudflare {
     BUCKET?: R2Bucket;
     ADMIN_EMAIL?: string;
     AUTH_MODE?: string;
+    FILE_STORAGE?: "d1" | "r2";
     ADMIN_PASSWORD?: string;
     PAGES_ORIGIN?: string;
     RESEND_API_KEY?: string;

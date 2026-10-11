@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, blob, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const commissionRequests = sqliteTable("commission_requests", {
   id: text("id").primaryKey(), name: text("name").notNull(), email: text("email").notNull(),
@@ -52,3 +52,11 @@ export const emailOutbox = sqliteTable("email_outbox", {
 export const rateLimits = sqliteTable("rate_limits", {
   key: text("key").primaryKey(), count: integer("count").notNull(), expiresAt: integer("expires_at").notNull(),
 });
+
+export const storedObjects = sqliteTable("stored_objects", {
+  storageKey: text("storage_key").primaryKey(), size: integer("size").notNull(), chunkCount: integer("chunk_count").notNull(),
+});
+export const storedChunks = sqliteTable("stored_chunks", {
+  storageKey: text("storage_key").notNull().references(() => storedObjects.storageKey),
+  chunkIndex: integer("chunk_index").notNull(), data: blob("data").notNull(),
+}, (t) => [uniqueIndex("stored_chunk_position").on(t.storageKey, t.chunkIndex)]);

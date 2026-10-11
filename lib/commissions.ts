@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { databaseFileStore } from "./commission-storage";
 import { ApiError, assertSameOrigin, emailField, idempotencyKey, stringField } from "./commission-validation";
 
 export type Commission = {
@@ -19,9 +20,11 @@ export const database = () => {
   return env.DB;
 };
 export const bucket = () => {
+  if (env.FILE_STORAGE === "d1" && env.DB) return databaseFileStore(env.DB);
   if (!env.BUCKET) throw new ApiError(503, "File storage is not connected yet. You can submit without attachments.");
   return env.BUCKET;
 };
+export const storageConfigured = () => env.FILE_STORAGE === "d1" ? !!env.DB : !!env.BUCKET;
 export function authMode(): "sites" | "standalone" {
   if (!env.AUTH_MODE || env.AUTH_MODE === "sites") return "sites";
   if (env.AUTH_MODE === "standalone") return "standalone";

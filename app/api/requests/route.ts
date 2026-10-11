@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { ApiError, assertSameOrigin } from "@/lib/commission-validation";
-import { Commission, bucket, database, endpoint, hash, identity, json, mailStatement, makeAccess, multipart, notificationSummary, NOW, pagesOrigin, publicEndpoint, publicOptions, rateLimit, sendMails, serializeCommission, siteOrigin, validateRequestFields } from "@/lib/commissions";
+import { Commission, adminConfigured, bucket, database, endpoint, hash, identity, json, mailStatement, makeAccess, multipart, notificationSummary, NOW, pagesOrigin, publicEndpoint, publicOptions, rateLimit, sendMails, serializeCommission, siteOrigin, validateRequestFields } from "@/lib/commissions";
 import { storeUploads, uploadStatement, validateUploads } from "@/lib/commission-files";
 export const dynamic = "force-dynamic";
 
@@ -36,6 +36,7 @@ export async function POST(request: Request) {
   return publicEndpoint(request, async () => {
     const allowedOrigin = pagesOrigin();
     assertSameOrigin(request, allowedOrigin);
+    if (!adminConfigured()) throw new ApiError(503, "Commission submissions are being connected. Please email cjgsinclare@gmail.com in the meantime.");
     await rateLimit(request, "submit", 8, 3600);
     const form = await multipart(request, undefined, allowedOrigin), fields = validateRequestFields(form);
     const uploads = await validateUploads(form.getAll("files"));

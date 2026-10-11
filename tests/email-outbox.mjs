@@ -10,6 +10,8 @@ const validationUrl = `data:text/javascript;base64,${Buffer.from(validation).toS
 let source = compile(await readFile(new URL('../lib/commissions.ts', import.meta.url), 'utf8'));
 source = source.replace(/import\s*\{\s*env\s*\}\s*from\s*["']cloudflare:workers["'];/, 'const env = globalThis.__commissionMailTestEnv;');
 source = source.replace(/from\s*["']\.\/commission-validation["']/g, `from ${JSON.stringify(validationUrl)}`);
+const storageSource = compile(await readFile(new URL('../lib/commission-storage.ts', import.meta.url), 'utf8')).replace(/from\s*["']\.\/commission-validation["']/g, `from ${JSON.stringify(validationUrl)}`);
+source = source.replace(/from\s*["']\.\/commission-storage["']/g, `from ${JSON.stringify(`data:text/javascript;base64,${Buffer.from(storageSource).toString('base64')}`)}`);
 
 let record;
 const database = {

@@ -51,7 +51,7 @@ async function moduleUrl(path) {
   if (urls.has(path)) return urls.get(path);
   let source = ts.transpileModule(await readFile(new URL(`../${path}`, import.meta.url), 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } }).outputText;
   source = source.replace(/import\s*\{\s*env\s*\}\s*from\s*["']cloudflare:workers["'];/, 'const env = globalThis.__standaloneSecurityEnv;');
-  for (const [specifier, target] of [['./commission-validation', 'lib/commission-validation.ts'], ['./commissions', 'lib/commissions.ts'], ['@/lib/commission-validation', 'lib/commission-validation.ts'], ['@/lib/commissions', 'lib/commissions.ts'], ['@/lib/commission-files', 'lib/commission-files.ts']]) {
+  for (const [specifier, target] of [['./commission-validation', 'lib/commission-validation.ts'], ['./commission-storage', 'lib/commission-storage.ts'], ['./commissions', 'lib/commissions.ts'], ['@/lib/commission-validation', 'lib/commission-validation.ts'], ['@/lib/commissions', 'lib/commissions.ts'], ['@/lib/commission-files', 'lib/commission-files.ts']]) {
     if (source.includes(`"${specifier}"`) || source.includes(`'${specifier}'`)) source = source.replaceAll(`"${specifier}"`, JSON.stringify(await moduleUrl(target))).replaceAll(`'${specifier}'`, JSON.stringify(await moduleUrl(target)));
   }
   const url = `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
@@ -115,6 +115,8 @@ try {
     testEnv.ADMIN_PASSWORD = 'short';
     assert.equal(lib.adminConfigured(), false);
     assert.equal((await auth.POST(request('/api/admin/auth', { method: 'POST', body: { email: testEnv.ADMIN_EMAIL, password: 'short' } }))).status, 503);
+    assert.equal((await requests.POST(request('/api/requests', { method: 'POST', form: submission(), requestOrigin: pages }))).status, 503);
+    assert.equal(sql.prepare('SELECT count(*) AS count FROM commission_requests').get().count, 0);
     testEnv.ADMIN_PASSWORD = password;
   });
   await check('Successful login stores only a random token hash with 12-hour expiry', async () => {
@@ -224,6 +226,42 @@ try {
     const denied = await site.GET(request('/api/site', { headers: { origin: pages } }));
     assert.equal(denied.status, 503); assert.equal(denied.headers.get('access-control-allow-origin'), null);
     testEnv.PAGES_ORIGIN = pages;
+  });
+  await check('Free database storage preserves multi-chunk private files and access checks', async () => {
+    testEnv.FILE_STORAGE = 'd1'; delete testEnv.BUCKET;
+    const bytes = 'A private attachment with multiple chunks.\n'.repeat(14000);
+    const form = submission(); form.append('files', new Blob([bytes]), 'private-chunks.txt');
+    const saved = await requests.POST(request('/api/requests', { method: 'POST', form, requestOrigin: pages }));
+    assert.equal(saved.status, 201); const data = await saved.json();
+    const file = sql.prepare('SELECT * FROM files WHERE request_id=?').get(data.request.id);
+    const stored = sql.prepare('SELECT * FROM stored_objects WHERE storage_key=?').get(file.storage_key);
+    assert.ok(stored.chunk_count > 1);
+    assert.equal((await files.GET(request('/api/files/' + file.id), context(file.id))).status, 404);
+    const token = new URLSearchParams(new URL(data.portalUrl).hash.slice(1)).get('access');
+    const login = await access.POST(request('/api/access', { method:'POST', body:{token} }));
+    const download = await files.GET(request('/api/files/' + file.id, { cookie:cookiePair(login) }), context(file.id));
+    assert.equal(download.status, 200); assert.equal(await download.text(), bytes);
+    assert.equal((await (await site.GET(request('/api/site'))).json()).readiness.uploads, true);
+  });
+  await check('Full free storage rejects new files without orphan chunks or lost existing files', async () => {
+    const cap = 200 * 1024 * 1024;
+    const used = sql.prepare('SELECT COALESCE(SUM(size),0) AS total FROM stored_objects').get().total;
+    sql.prepare('INSERT INTO stored_objects(storage_key,size,chunk_count) VALUES(?,?,0)').run('capacity-fixture',cap-used);
+    const before = sql.prepare('SELECT count(*) AS count FROM stored_objects').get().count;
+    const response = await requests.POST(request('/api/requests', { method:'POST',form:submission(undefined,true),requestOrigin:pages }));
+    assert.equal(response.status,507);
+    assert.equal(sql.prepare('SELECT count(*) AS count FROM stored_objects').get().count,before);
+    sql.prepare('DELETE FROM stored_objects WHERE storage_key=?').run('capacity-fixture');
+  });
+  await check('Failed chunk write rolls back the reservation and all chunks', async () => {
+    sql.exec("CREATE TRIGGER fail_chunk BEFORE INSERT ON stored_chunks WHEN NEW.chunk_index=1 BEGIN SELECT RAISE(ABORT,'fixture failure'); END");
+    const before = sql.prepare('SELECT count(*) AS count FROM stored_objects').get().count;
+    const store = lib.bucket();
+    await assert.rejects(() => store.put('rollback-fixture',new Blob(['x'.repeat(300000)]).stream()));
+    assert.equal(sql.prepare('SELECT count(*) AS count FROM stored_objects').get().count,before);
+    assert.equal(sql.prepare('SELECT count(*) AS count FROM stored_chunks WHERE storage_key=?').get('rollback-fixture').count,0);
+    sql.exec('DROP TRIGGER fail_chunk');
+    delete testEnv.FILE_STORAGE; testEnv.BUCKET = storage;
   });
 } finally {
   globalThis.fetch = actualFetch; globalThis.Request = ActualRequest; delete globalThis.__standaloneSecurityEnv; sql.close();

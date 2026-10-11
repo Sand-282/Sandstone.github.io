@@ -68,17 +68,6 @@ export async function provisionResources(api) {
   if (matches.length > 1) throw new Error('More than one matching database exists; select the intended database before publishing.');
   const database = matches[0] ?? await api('POST', '/d1/database', { name: DATABASE_NAME });
   if (!UUID.test(database?.uuid ?? '') || database.uuid === PLACEHOLDER_UUID) throw new Error('Cloudflare did not return a real D1 database ID. Publishing stopped.');
-  const buckets = await api('GET', `/r2/buckets?name_contains=${BUCKET_NAME}&per_page=1000`);
-  if (!Array.isArray(buckets?.buckets)) throw new Error('Cloudflare returned an unexpected bucket list.');
-  if (!buckets.buckets.some(bucket => bucket.name === BUCKET_NAME)) {
-    if (buckets.buckets.length >= 1000) throw new Error('The matching bucket list is too large to safely choose storage. Review the Cloudflare account before publishing.');
-    await api('POST', '/r2/buckets', { name: BUCKET_NAME });
-  }
-  const managed = await api('GET', `/r2/buckets/${BUCKET_NAME}/domains/managed`);
-  const custom = await api('GET', `/r2/buckets/${BUCKET_NAME}/domains/custom`);
-  if (managed?.enabled !== false || !Array.isArray(custom?.domains) || custom.domains.some(domain => domain.enabled !== false)) {
-    throw new Error('The upload bucket has public access enabled or its privacy could not be verified. Disable its public r2.dev/custom domains in Cloudflare before publishing.');
-  }
   return { databaseId: database.uuid, siteUrl };
 }
 
@@ -107,13 +96,14 @@ export function prepareConfig(settings, resources, root = ROOT) {
   config.preview_urls = false;
   config.vars = {
     AUTH_MODE: 'standalone',
+    FILE_STORAGE: 'd1',
     ADMIN_EMAIL: settings.adminEmail,
     PAGES_ORIGIN: settings.pagesOrigin,
     SITE_URL: resources.siteUrl,
     EMAIL_FROM: settings.emailFrom,
   };
   config.d1_databases = [{ binding: 'DB', database_name: DATABASE_NAME, database_id: resources.databaseId, migrations_dir: '../../drizzle' }];
-  config.r2_buckets = [{ binding: 'BUCKET', bucket_name: BUCKET_NAME }];
+  config.r2_buckets = []; // Free D1 attachment storage requires no R2 subscription.
   // Only this disposable build output is changed. Source hosting bindings stay intact.
   writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
   return configPath;

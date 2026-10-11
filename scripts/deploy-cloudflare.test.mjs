@@ -69,7 +69,8 @@ test('first deployment uses real resource IDs and installs secrets before code',
   try {
     const resources = await deploy({ env, root, transport: mock.transport, runner: async (args, options) => { commands.push({ args, options }); }, log: message => logs.push(message) });
     assert.equal(resources.siteUrl, `https://${WORKER_NAME}.my-cloudflare-account.workers.dev`);
-    assert.equal(mock.calls.filter(call => call.method === 'POST').length, 2);
+    assert.equal(mock.calls.filter(call => call.method === 'POST').length, 1);
+    assert.ok(!mock.calls.some(call => call.endpoint.startsWith('/r2/')));
     assert.deepEqual(commands.map(command => command.args[0]), ['secret', 'd1', 'deploy']);
     assert.equal(commands[0].options.quiet, true);
     assert.deepEqual(JSON.parse(commands[0].options.input), { ADMIN_PASSWORD: env.ADMIN_PASSWORD });
@@ -77,7 +78,8 @@ test('first deployment uses real resource IDs and installs secrets before code',
     const config = JSON.parse(readFileSync(path.join(root, 'dist/server/wrangler.json'), 'utf8'));
     assert.equal(config.d1_databases[0].database_id, databaseId);
     assert.equal(config.d1_databases[0].migrations_dir, '../../drizzle');
-    assert.equal(config.r2_buckets[0].bucket_name, BUCKET_NAME);
+    assert.deepEqual(config.r2_buckets, []);
+    assert.equal(config.vars.FILE_STORAGE, 'd1');
     assert.equal(config.vars.AUTH_MODE, 'standalone');
     assert.equal(config.vars.SITE_URL, resources.siteUrl);
     assert.equal(config.vars.PAGES_ORIGIN, 'https://sand-282.github.io');
@@ -99,14 +101,9 @@ test('later deployments reuse storage without deleting or recreating it', async 
   } finally { removeFixture(root); }
 });
 
-test('public upload storage prevents credentials and application deployment', async () => {
-  const root = fixture();
-  const mock = mockTransport({ existing: true, publicBucket: true });
-  let ran = false;
-  try {
-    await assert.rejects(deploy({ env, root, transport: mock.transport, runner: async () => { ran = true; }, log: () => {} }), /public access/);
-    assert.equal(ran, false);
-  } finally { removeFixture(root); }
+test('free deployment never activates or uses R2', async () => {
+  const root = fixture(); const mock = mockTransport({ existing: true, publicBucket: true });
+  try { await deploy({ env, root, transport:mock.transport, runner:async()=>{}, log:()=>{} }); assert.ok(!mock.calls.some(call=>call.endpoint.startsWith('/r2/'))); } finally { removeFixture(root); }
 });
 
 test('failed secret upload prevents migrations and application deployment', async () => {
