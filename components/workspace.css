@@ -13,3 +13,67 @@
 .ws-embedded .ws-header,.ws-embedded .ws-footer{display:none}.ws-embedded .ws-page{padding-top:22px}.ws-access-illustration{display:none!important}
 .ws-root{--ws-forest:#eeece8;--ws-muted:#999994;--ws-line:#333;--ws-lime:#ef864f;--ws-cream:#090909;color:#eeece8;background:#090909}.ws-root :is(h1,h2,h3,h4,strong){color:#eeece8}.ws-root .ws-eyebrow{color:#ef864f}.ws-root :is(.ws-header,.ws-request-sidebar,.ws-detail,.ws-content-panel,.ws-email-panel){background:#111;border-color:#333;box-shadow:none}.ws-root .ws-btn-primary{background:#ef864f;color:#0c0c0c!important}.ws-root .ws-btn-primary:hover:enabled{background:#ffa06d;box-shadow:none}.ws-root .ws-btn-outline{background:#202020;border-color:#4a4a4a;color:#eae8e4}.ws-root .ws-btn-outline:hover:enabled,.ws-root .ws-btn-quiet:hover:enabled,.ws-root .ws-tabs button:hover{background:#272727;color:#ef864f}.ws-root .ws-tabs .ws-tab-active{color:#ef864f;border-color:#ef864f}.ws-root .ws-tabs button>span{color:#111}.ws-root .ws-filter select,.ws-root .ws-field input,.ws-root .ws-field textarea,.ws-root .ws-composer textarea{background:#1d1d1d;border-color:#414141;color:#efedeb}.ws-root .ws-field{color:#c5c3bf}.ws-root .ws-field :is(input,textarea)::placeholder,.ws-root .ws-composer textarea::placeholder{color:#777}.ws-root .ws-request-card:hover,.ws-root .ws-request-selected{background:#25201d;border-color:#6b4734}.ws-root .ws-request-card>strong{color:#f0eeeb}.ws-root .ws-status{background:#26221f;color:#d5a281}.ws-root .ws-status-declined{color:#ca8f84}.ws-root .ws-decisions,.ws-root .ws-composer>div,.ws-root .ws-content-fields,.ws-root .ws-email-table-head{background:#181818;border-color:#333}.ws-root .ws-project-meta{border-color:#303030}.ws-root .ws-brief>p{color:#bcbab5}.ws-root .ws-message p{background:#202020;border-color:#383838;color:#dedbd7}.ws-root .ws-message-own p{background:#57321f;border-color:#78452a;color:#fff0e4}.ws-root .ws-message-author{color:#eea677}.ws-root .ws-composer{border-color:#444}.ws-root .ws-composer:focus-within{border-color:#ef864f;box-shadow:none}.ws-root .ws-mail-warning,.ws-root .ws-email-readiness,.ws-root .ws-email-ready,.ws-root .ws-recovery-result{background:#211b17;border-color:#5b3c2d;color:#d5ae96}.ws-root .ws-email-readiness p,.ws-root .ws-email-ready p{color:#bea995}.ws-root .ws-empty-icon,.ws-root .ws-chat-locked>span,.ws-root .ws-avatar{background:#29221c;color:#ef864f;transform:none}.ws-root .ws-alert-success{background:#1b241b;border-color:#3d5b40;color:#add0ab}.ws-root .ws-alert-error{background:#281a17;border-color:#6b3d33;color:#eda997}.ws-root .ws-email-record,.ws-root .ws-email-table-head{border-color:#333}.ws-root .ws-mail-state{background:#2c241b;color:#d8b88a}.ws-root .ws-email-counts>div{background:#1b1b1b;border-color:#333}.ws-root .ws-access-divider:before,.ws-root .ws-access-divider:after{background:#333}.ws-root .ws-history-note{background:#202020;color:#aaa}.ws-root :is(.ws-file,.ws-email-record){border-color:#343434}.ws-root :is(input,textarea,select):focus-visible,.ws-root :is(button,a):focus-visible{outline-color:#ef864f}
 
+
+/* Use the same orange and neutral palette when the device is in light mode. */
+@media(prefers-color-scheme:light){
+.ws-root{color-scheme:light;--ws-forest:#211f1c;--ws-muted:#6e6962;--ws-line:#e2ded8;--ws-lime:#c85123;--ws-cream:#f8f7f5;color:#211f1c;background:#f8f7f5}
+.ws-root :is(h1,h2,h3,h4,strong){color:#211f1c}
+.ws-root .ws-header,.ws-root .ws-request-sidebar,.ws-root .ws-detail,.ws-root .ws-content-panel,.ws-root .ws-email-panel{background:#fff;border-color:#e2ded8;box-shadow:none}
+.ws-root .ws-brand-icon span:nth-child(3){background:#c85123}
+.ws-root .ws-btn-primary{background:#e66c35;color:#17110e!important}
+.ws-root .ws-btn-primary:hover:enabled,.ws-root .ws-btn-primary[href]:hover{background:#f27b42;box-shadow:none}
+.ws-root .ws-btn-outline{background:#fff;border-color:#d8d3cc;color:#292622}
+.ws-root .ws-btn-outline:hover:enabled,.ws-root .ws-btn-quiet:hover:enabled,.ws-root .ws-tabs button:hover{background:#f5eee8;color:#a74620}
+.ws-root .ws-tabs .ws-tab-active{color:#b94b20;border-color:#c85123}
+.ws-root .ws-tabs button>span{background:#f7e7de;color:#8d3819}
+.ws-root :is(button,a,input,textarea,select):focus-visible{outline-color:#c85123}
+.ws-root .ws-private-pill{background:#f8eee8;color:#85401f}
+.ws-root .ws-alert-error{background:#fff3ef;border-color:#e8b7a8;color:#8f321c}
+.ws-root .ws-alert-success{background:#eef5e9;border-color:#cbdcbe;color:#3e6735}
+.ws-root .ws-mail-warning,.ws-root .ws-email-readiness,.ws-root .ws-email-ready,.ws-root .ws-recovery-result{background:#faf5eb;border-color:#e8d9b9;color:#765b27}
+.ws-root .ws-email-readiness p,.ws-root .ws-email-ready p{color:#6f6250}
+.ws-root .ws-request-card{background:#fff;border-color:transparent}
+.ws-root .ws-request-card:hover,.ws-root .ws-request-selected{background:#fff6f0;border-color:#e9c5b1}
+.ws-root .ws-request-card>strong,.ws-root .ws-project-byline strong{color:#211f1c}
+.ws-root .ws-request-date,.ws-root .ws-sidebar-heading h2 span{color:#77716a}
+.ws-root .ws-filter select,.ws-root .ws-field input,.ws-root .ws-field textarea,.ws-root .ws-composer textarea{background:#fff;border-color:#d6d1ca;color:#211f1c}
+.ws-root .ws-field{color:#46413b}
+.ws-root .ws-field :is(input,textarea)::placeholder,.ws-root .ws-composer textarea::placeholder{color:#817b73}
+.ws-root .ws-decisions,.ws-root .ws-composer>div,.ws-root .ws-content-fields,.ws-root .ws-email-table-head{background:#f6f4f0;border-color:#e2ded8}
+.ws-root .ws-project-meta{border-color:#e2ded8}
+.ws-root .ws-brief>p{color:#524d46}
+.ws-root .ws-message p{background:#f2f0ec;border-color:#e2ded8;color:#302d29}
+.ws-root .ws-message-own p{background:#f7e7de;border-color:#e6b89f;color:#3c2419}
+.ws-root .ws-message-author{color:#8d481f}
+.ws-root .ws-composer{border-color:#d6d1ca}
+.ws-root .ws-composer:focus-within{border-color:#c85123;box-shadow:0 0 0 3px #c851231c}
+.ws-root .ws-empty-icon,.ws-root .ws-chat-locked>span,.ws-root .ws-avatar{background:#f7e7de;color:#a8461f}
+.ws-root .ws-access-lock{background:#f7e7de;color:#a8461f;box-shadow:none}
+.ws-root .ws-access-dot,.ws-root .ws-access-dot-two{background:#e89a72}
+.ws-root .ws-access-divider:before,.ws-root .ws-access-divider:after{background:#e2ded8}
+.ws-root .ws-access-divider,.ws-root .ws-helper,.ws-root .ws-client-footer>span{color:#77716a}
+.ws-root .ws-loading{color:#a8461f}
+.ws-root .ws-content-fields{background:#f6f4f0}
+.ws-root .ws-image-placeholder{background:#faf8f5;border-color:#d8d2ca;color:#9b694e}
+.ws-root .ws-image-upload{background:#fff}
+.ws-root .ws-email-table-head{color:#625c54}
+.ws-root .ws-email-record,.ws-root .ws-email-table-head{border-color:#e2ded8}
+.ws-root .ws-email-counts>div{background:#fff;border-color:#e2ded8}
+.ws-root .ws-history-note{background:#f2f0ec;color:#5c5750}
+.ws-root .ws-box-editor{background:#fff;border-color:#dedad4}
+.ws-root .ws-box-editor-head{color:#55504a}
+.ws-root .ws-box-editor small{color:#6e6962}
+}
+
+@media(prefers-color-scheme:light){
+.ws-root .ws-status{background:#f0eee8;color:#625b50}
+.ws-root .ws-status-pending{background:#f8f0db;color:#87681e}
+.ws-root .ws-status-active{background:#e6f2e0;color:#3e7138}
+.ws-root .ws-status-accepted{background:#e9f0df;color:#5e743d}
+.ws-root .ws-status-completed{background:#e6eeea;color:#4c7167}
+.ws-root .ws-status-declined{background:#f5e9e4;color:#8d4c40}
+.ws-root .ws-mail-state{background:#f4efd9;color:#846927}
+.ws-root .ws-mail-sent{background:#e8f2df;color:#3e6735}
+.ws-root .ws-mail-failed{background:#fae9e1;color:#8e472b}
+.ws-root .ws-mail-pending,.ws-root .ws-mail-sending{background:#eaf0e2;color:#596d45}
+}
