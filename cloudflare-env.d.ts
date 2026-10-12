@@ -9,6 +9,9 @@ declare namespace Cloudflare {
     PAGES_ORIGIN?: string;
     RESEND_API_KEY?: string;
     EMAIL_FROM?: string;
+    GMAIL_BRIDGE_URL?: string;
+    GMAIL_BRIDGE_TOKEN?: string;
     SITE_URL?: string;
   }
 }
+
