@@ -18,6 +18,7 @@ type Content = { brand: string; intro: string; availability: string; projects: P
 type EmailState = { configured: boolean; notifications: Notification[]; counts: Record<string, number> };
 type EmailResult = { state: string; error?: string };
 type Tab = "requests" | "content" | "email";
+const workspaceLogo = process.env.NEXT_PUBLIC_PAGES_MODE === "true" ? "/Sandstone.github.io/sandstone-logo.png" : "/sandstone-logo.png";
 const CHAT_STATUSES = new Set(["accepted", "active", "completed"]);
 const STATUS_NAMES: Record<string, string> = { pending: "Awaiting review", accepted: "Accepted", active: "In progress", completed: "Completed", declined: "Declined" };
 function normalizeContent(value: Content): Content {
@@ -251,7 +252,7 @@ export default function Workspace({ mode, onHome }: { mode: "admin" | "portal"; 
   const authorised = isAdmin ? session?.role === "admin" : session?.role === "client";
 
   return <div className={`ws-root ${typeof window !== "undefined" && new URLSearchParams(window.location.search).has("embed") ? "ws-embedded" : ""}`}>
-    <header className="ws-header"><button className="ws-brand" onClick={onHome} aria-label="Return to sandstone home">sandstone<span className="ws-brand-divider" /> <span className="ws-header-label">{isAdmin ? "Studio workspace" : "Client workspace"}</span></button><button className="ws-back ws-btn ws-btn-quiet" onClick={onHome}><ArrowLeft size={16} /> Back to website</button></header>
+    <header className="ws-header"><button className="ws-brand" onClick={onHome} aria-label="Return to sandstone home"><img className="ws-brand-logo" src={workspaceLogo} alt="" aria-hidden="true" /><span className="ws-brand-divider" /> <span className="ws-header-label">{isAdmin ? "Studio workspace" : "Client workspace"}</span></button><button className="ws-back ws-btn ws-btn-quiet" onClick={onHome}><ArrowLeft size={16} /> Back to website</button></header>
     <div className="ws-page">
       {loading ? <div className="ws-loading"><LoaderCircle className="ws-spin" size={28} /><p>Opening your workspace…</p></div> : !authorised ? <section className="ws-access">
         <div className="ws-access-illustration"><div className="ws-access-orbit" /><div className="ws-access-lock"><LockKeyhole size={35} /></div><span className="ws-access-dot ws-access-dot-one" /><span className="ws-access-dot ws-access-dot-two" /></div>
