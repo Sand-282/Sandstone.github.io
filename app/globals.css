@@ -146,9 +146,8 @@
  .process-switcher{max-width:none;width:100%}
  .process-detail{grid-template-columns:74px minmax(0,1fr);min-height:100px;padding-top:22px}
 }
-.hero-copy h1 .typed-line{position:relative;display:block;min-height:1.1em}
-.hero-copy h1 .typed-reserve{display:block;visibility:hidden}
-.hero-copy h1 .typed-live{position:absolute;inset:0;color:inherit}
+.hero-copy h1 .typed-line{display:block}
+.hero-copy h1 .typed-live{color:inherit}
 .hero-copy h1 .type-caret{display:inline-block;width:2px;height:.78em;margin-left:.08em;background:currentColor;vertical-align:-.02em;animation:type-caret-blink .8s steps(2,start) infinite}
 .visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 @keyframes type-caret-blink{to{visibility:hidden}}
