@@ -31,7 +31,7 @@ export function authMode(): "sites" | "standalone" {
   throw new ApiError(503, "Owner sign-in is not configured correctly.");
 }
 export function adminConfigured(): boolean {
-  return !!env.ADMIN_EMAIL?.trim() && (authMode() === "sites" || new TextEncoder().encode(env.ADMIN_PASSWORD ?? "").length >= 16);
+  return !!env.ADMIN_EMAIL?.trim() && (authMode() === "sites" || (env.ADMIN_PASSWORD?.trim().length ?? 0) >= 14);
 }
 function gmailBridgeConfigured(): boolean {
   try {
@@ -145,7 +145,7 @@ export async function ownerPasswordMatches(email: unknown, password: unknown): P
   const [actual, expected] = await Promise.all([hash(submitted), hash(configured)]);
   let difference = 0;
   for (let i = 0; i < expected.length; i++) difference |= actual.charCodeAt(i) ^ expected.charCodeAt(i);
-  return difference === 0 && new TextEncoder().encode(configured).length >= 16 && typeof email === "string" && email.trim().toLowerCase() === env.ADMIN_EMAIL?.trim().toLowerCase();
+  return difference === 0 && configured.trim().length >= 14 && typeof email === "string" && email.trim().toLowerCase() === env.ADMIN_EMAIL?.trim().toLowerCase();
 }
 
 export async function identity(request: Request): Promise<Identity> {
