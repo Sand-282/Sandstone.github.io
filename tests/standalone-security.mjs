@@ -69,6 +69,7 @@ const project = await import(await moduleUrl('app/api/requests/[id]/project/rout
 const projectFiles = await import(await moduleUrl('app/api/requests/[id]/files/route.ts'));
 const files = await import(await moduleUrl('app/api/files/[id]/route.ts'));
 const content = await import(await moduleUrl('app/api/admin/site/route.ts'));
+const images = await import(await moduleUrl('app/api/admin/images/route.ts'));
 const ownerHeaders = { 'oai-authenticated-user-id': 'forged-owner', 'oai-authenticated-user-email': testEnv.ADMIN_EMAIL };
 const context = (id) => ({ params: Promise.resolve({ id }) });
 function request(path, { method = 'GET', body, form, headers = {}, requestOrigin = origin, cookie, ip = randomUUID() } = {}) {
@@ -219,6 +220,19 @@ try {
     assert.equal(data.files.length, 1);
     assert.equal((await files.GET(request(data.files[0].url), context(data.files[0].id))).status, 404);
     assert.equal((await files.GET(request(data.files[0].url, { cookie: clientCookie }), context(data.files[0].id))).status, 200);
+  });
+  await check('Admin can edit exactly three homepage boxes with uploaded video', async () => {
+    const form = new FormData(); form.append('file', new Blob([Uint8Array.from([0, 0, 0, 16, 102, 116, 121, 112, 105, 115, 111, 109])]), 'clip.mp4');
+    const uploaded = await images.POST(request('/api/admin/images', { method: 'POST', cookie: ownerCookie, form }));
+    assert.equal(uploaded.status, 201, await uploaded.clone().text());
+    const media = (await uploaded.json()).file.url;
+    const boxes = [{ title: 'Update', text: 'A short video.', media }, { title: 'Details', text: '', media: '' }, { title: 'Contact', text: '', media: '' }];
+    const payload = { brand: 'sandstone', intro: 'Bedrock development', availability: 'Open for commissions', projects: [], boxes };
+    assert.equal((await content.PUT(request('/api/admin/site', { method: 'PUT', cookie: clientCookie, body: payload }))).status, 403);
+    assert.equal((await content.PUT(request('/api/admin/site', { method: 'PUT', cookie: ownerCookie, body: { ...payload, boxes: boxes.slice(0, 2) } }))).status, 400);
+    const saved = await content.PUT(request('/api/admin/site', { method: 'PUT', cookie: ownerCookie, body: payload }));
+    assert.equal(saved.status, 200, await saved.clone().text());
+    assert.equal((await asJson(await site.GET(request('/api/site')))).boxes[0].mediaType, 'video');
   });
   await check('Expiry and owner changes invalidate saved admin cookies', async () => {
     testEnv.ADMIN_EMAIL = 'new-owner@example.test';

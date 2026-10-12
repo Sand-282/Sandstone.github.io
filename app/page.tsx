@@ -73,7 +73,7 @@ export default function Home({ initialView = "home" }: { initialView?: "home" | 
         setView("home");
         const access = new URLSearchParams(window.location.hash.slice(1)).get("access") || "";
         if (access) { setPortalAccess(access); window.history.replaceState({}, "", window.location.pathname); }
-        if (next !== "home" || new URLSearchParams(window.location.search).get("portal") === "1" || access) setPortalMode(next === "admin" ? "admin" : "portal");
+        setPortalMode(next !== "home" || new URLSearchParams(window.location.search).get("portal") === "1" || access ? next === "admin" ? "admin" : "portal" : null);
         return;
       }
       if (next !== "home" && window.location.hostname.endsWith(".workers.dev") && !new URLSearchParams(window.location.search).has("embed")) {
@@ -92,12 +92,12 @@ export default function Home({ initialView = "home" }: { initialView?: "home" | 
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = previous; };
   }, [formOpen]);
-  useEffect(() => { if (!portalMode) return; const before = document.body.style.overflow; document.body.style.overflow = "hidden"; return () => { document.body.style.overflow = before; }; }, [portalMode]);
+  useEffect(() => { if (!portalMode) return; const before = document.body.style.overflow; document.body.style.overflow = "hidden"; const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { setPortalMode(null); setPortalAccess(""); window.history.replaceState({}, "", window.location.pathname); } }; window.addEventListener("keydown", escape); return () => { document.body.style.overflow = before; window.removeEventListener("keydown", escape); }; }, [portalMode]);
   if (!PAGES_MODE && view !== "home") return <Workspace mode={view} onHome={() => { window.history.pushState({}, "", "/"); setView("home"); }} />;
   const brand = site.brand || "sandstone";
   const openForm = () => { dialog.current?.showModal(); setFormOpen(true); };
   const openPortal = (mode: "portal" | "admin") => { setPortalMode(mode); window.history.pushState({}, "", `?view=${mode}`); };
-  const closePortal = () => { setPortalMode(null); setPortalAccess(""); window.history.pushState({}, "", window.location.pathname); };
+  const closePortal = () => { setPortalMode(null); setPortalAccess(""); window.history.replaceState({}, "", window.location.pathname); };
   const portalSrc = portalMode ? `${workspaceUrl(`/${portalMode}`)}?embed=1${portalAccess ? `#access=${encodeURIComponent(portalAccess)}` : ""}` : "";
   const boxes = (site.boxes || initialSite.boxes).slice(0, 3);
   return <div className="public-site">
