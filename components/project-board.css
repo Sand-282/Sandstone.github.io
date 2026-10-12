@@ -23,3 +23,26 @@
 .project-board .project-activity li{border-color:#e7e3dd;color:#49443e}
 .project-board .project-activity time{color:#77716a}
 }
+
+.project-board .project-panel{background:var(--card);border-color:var(--border);color:var(--text)}
+.project-board .project-panel h3{color:var(--text)}
+.project-board .project-kicker,.project-board .project-text-button,.project-board .project-files li button{color:var(--accent)}
+.project-board .project-details,.project-board .project-features li,.project-board .project-files li,.project-board .project-revisions li{color:var(--text)}
+.project-board .project-progress-count,.project-board .project-hint,.project-board .project-empty,.project-board .project-features small,.project-board .project-revisions small{color:var(--text-secondary)}
+.project-board .project-progress-track{background:var(--background-secondary)}
+.project-board .project-progress-track span{background:var(--accent)}
+.project-board .project-features li,.project-board .project-files li,.project-board .project-revisions li{border-color:var(--border)}
+.project-board .project-feature-mark{border-color:var(--text-secondary)}
+.project-board .project-feature-mark.working{border-color:var(--accent);color:var(--accent)}
+.project-board .project-feature-mark.complete{background:var(--accent);border-color:var(--accent);color:var(--accent-foreground)}
+.project-board .project-features select,.project-board .project-revisions select,.project-board .project-inline-form input,.project-board .project-panel textarea{background:var(--card);border-color:var(--border);color:var(--text)}
+.project-board .project-inline-form input::placeholder,.project-board .project-panel textarea::placeholder{color:var(--text-secondary)}
+.project-board .project-inline-form input:focus,.project-board .project-panel textarea:focus{border-color:var(--accent)}
+.project-board .project-inline-form button,.project-board .project-action{background:var(--accent);color:var(--accent-foreground)}
+.project-board .project-upload{border-color:var(--border);color:var(--accent)}
+.project-board .project-activity-toggle{background:var(--background-secondary);border-color:var(--border);color:var(--text)}
+.project-board .project-activity>div{border-color:var(--border)}
+.project-board .project-activity li{border-color:var(--border);color:var(--text-secondary)}
+.project-board .project-activity time{color:var(--text-secondary)}
+
+.project-board .project-status,.project-board .project-status-pending,.project-board .project-status-active,.project-board .project-status-accepted,.project-board .project-status-completed,.project-board .project-status-declined{background:var(--background-secondary);color:var(--text-secondary)}

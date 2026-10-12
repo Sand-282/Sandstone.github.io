@@ -77,3 +77,52 @@
 .ws-root .ws-mail-failed{background:#fae9e1;color:#8e472b}
 .ws-root .ws-mail-pending,.ws-root .ws-mail-sending{background:#eaf0e2;color:#596d45}
 }
+
+/* Site-wide color tokens for the private workspace */
+.ws-root{color-scheme:inherit;--ws-forest:var(--text);--ws-muted:var(--text-secondary);--ws-line:var(--border);--ws-lime:var(--accent-light);--ws-cream:var(--background);background:var(--background);color:var(--text)}
+.ws-root :is(h1,h2,h3,h4,strong){color:var(--text)}
+.ws-root :is(.ws-header,.ws-request-sidebar,.ws-detail,.ws-content-panel,.ws-email-panel){background:var(--card);border-color:var(--border);color:var(--text);box-shadow:none}
+.ws-root .ws-brand-icon span:nth-child(3){background:var(--accent)}
+.ws-root .ws-btn-primary{background:var(--accent);color:var(--accent-foreground)!important}
+.ws-root .ws-btn-primary:hover:enabled,.ws-root .ws-btn-primary[href]:hover{background:var(--accent-hover);box-shadow:none}
+.ws-root .ws-btn-outline{background:var(--card);border-color:var(--border);color:var(--text)}
+.ws-root .ws-btn-outline:hover:enabled,.ws-root .ws-btn-quiet:hover:enabled,.ws-root .ws-tabs button:hover{background:var(--hover);color:var(--accent)}
+.ws-root .ws-tabs .ws-tab-active{color:var(--accent);border-color:var(--accent)}
+.ws-root .ws-tabs button>span{background:var(--accent-light);color:var(--text)}
+.ws-root :is(button,a,input,textarea,select):focus-visible{outline-color:var(--accent)}
+.ws-root .ws-private-pill{background:var(--accent-light);color:var(--text)}
+.ws-root .ws-request-card{background:var(--card);border-color:transparent}
+.ws-root .ws-request-card:hover,.ws-root .ws-request-selected{background:var(--hover);border-color:var(--border)}
+.ws-root .ws-request-card>strong,.ws-root .ws-project-byline strong{color:var(--text)}
+.ws-root .ws-filter select,.ws-root .ws-field input,.ws-root .ws-field textarea,.ws-root .ws-composer textarea{background:var(--card);border-color:var(--border);color:var(--text)}
+.ws-root .ws-field{color:var(--text)}
+.ws-root .ws-field :is(input,textarea)::placeholder,.ws-root .ws-composer textarea::placeholder{color:var(--text-secondary)}
+.ws-root :is(.ws-decisions,.ws-composer>div,.ws-content-fields,.ws-email-table-head){background:var(--background-secondary);border-color:var(--border)}
+.ws-root .ws-project-meta{border-color:var(--border)}
+.ws-root .ws-brief>p{color:var(--text-secondary)}
+.ws-root .ws-message p{background:var(--background-secondary);border-color:var(--border);color:var(--text)}
+.ws-root .ws-message-own p{background:var(--accent-light);border-color:var(--accent-light);color:var(--text)}
+.ws-root .ws-message-author,.ws-root .ws-chat-private{color:var(--accent)}
+.ws-root .ws-composer{border-color:var(--border)}
+.ws-root .ws-composer:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent)}
+.ws-root .ws-empty-icon,.ws-root .ws-chat-locked>span,.ws-root .ws-avatar,.ws-root .ws-access-lock{background:var(--accent-light);color:var(--accent);box-shadow:none}
+.ws-root .ws-access-dot,.ws-root .ws-access-dot-two{background:var(--accent)}
+.ws-root .ws-access-divider:before,.ws-root .ws-access-divider:after{background:var(--border)}
+.ws-root :is(.ws-access-divider,.ws-helper,.ws-client-footer>span,.ws-loading){color:var(--text-secondary)}
+.ws-root .ws-content-fields,.ws-root .ws-email-counts>div{background:var(--background-secondary);border-color:var(--border)}
+.ws-root .ws-image-placeholder{background:var(--background);border-color:var(--border);color:var(--text-secondary)}
+.ws-root .ws-image-upload{background:var(--card);border-color:var(--border);color:var(--text)}
+.ws-root .ws-box-editor{background:var(--card);border-color:var(--border)}
+.ws-root .ws-box-editor-head,.ws-root .ws-box-editor small{color:var(--text-secondary)}
+.ws-root .ws-access-dot-two{opacity:.75}
+.ws-root .ws-title-row p,.ws-root .ws-header-label,.ws-root .ws-eyebrow,.ws-root .ws-subheading,.ws-root .ws-panel-title p,.ws-root .ws-project-meta span{color:var(--text-secondary)}
+.ws-root .ws-email-table-head{color:var(--text-secondary)}
+.ws-root .ws-history-note{background:var(--background-secondary);color:var(--text-secondary)}
+.ws-root :is(.ws-file,.ws-email-record){border-color:var(--border)}
+.ws-root .ws-field :is(input,textarea):focus,.ws-root .ws-image-upload:hover{border-color:var(--accent)}
+
+.ws-root :is(.ws-status,.ws-status-pending,.ws-status-active,.ws-status-accepted,.ws-status-completed,.ws-status-declined){background:var(--background-secondary);color:var(--text-secondary)}
+.ws-root .ws-status i{background:var(--accent)}
+.ws-root .ws-mail-state{background:var(--background-secondary);color:var(--text-secondary)}
+.ws-root .ws-mail-failed{background:#fee2e2;color:#991b1b}
+@media(prefers-color-scheme:dark){.ws-root .ws-mail-failed{background:#451a1a;color:#fecaca}}
