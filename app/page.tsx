@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, ArrowRight, ArrowUpRight, Check, LockKeyhole, Paperclip, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronDown, LockKeyhole, Paperclip, X } from "lucide-react";
 import Workspace from "../components/Workspace";
 
 type Project = { id: string; title: string; category: string; description: string; image: string; accent?: string };
@@ -32,11 +32,79 @@ function detectBudgetCurrency(): BudgetCurrency {
   return "OTHER";
 }
 const BUDGET_RANGES: Record<BudgetCurrency, string[]> = {
-  USD: ["Under $25", "$25–$50", "$50–$100", "$100+"],
-  GBP: ["Under £20", "£20–£40", "£40–£80", "£80+"],
-  EUR: ["Under €25", "€25–€50", "€50–€100", "€100+"],
+  USD: ["Under $25", "$25–$50", "$50–$100", "$100–$250", "$250–$500", "$500–$1,000", "$1,000+"],
+  GBP: ["Under £20", "£20–£40", "£40–£80", "£80–£200", "£200–£400", "£400–£800", "£800+"],
+  EUR: ["Under €25", "€25–€50", "€50–€100", "€100–€250", "€250–€500", "€500–€1,000", "€1,000+"],
   OTHER: ["Under 25", "25–50", "50–100", "100+"],
 };
+
+function FormDropdown({ name, label, placeholder, options, value, onChange }: { name: string; label: string; placeholder: string; options: { label: string; value: string }[]; value: string; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const id = `quote-${name}`;
+  const labelId = `${id}-label`;
+  const listId = `${id}-listbox`;
+  const selectedIndex = options.findIndex(option => option.value === value);
+  const selected = selectedIndex >= 0 ? options[selectedIndex] : null;
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
+
+  function showOptions() {
+    setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0);
+    setOpen(true);
+  }
+  function choose(index: number) {
+    const option = options[index];
+    if (!option) return;
+    onChange(option.value);
+    setOpen(false);
+    trigger.current?.focus();
+  }
+  function handleKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!open) { showOptions(); return; }
+      setActiveIndex(index => (index + (event.key === "ArrowDown" ? 1 : options.length - 1)) % options.length);
+    } else if (event.key === "Home" && open) {
+      event.preventDefault();
+      setActiveIndex(0);
+    } else if (event.key === "End" && open) {
+      event.preventDefault();
+      setActiveIndex(options.length - 1);
+    } else if ((event.key === "Enter" || event.key === " " || event.key === "Spacebar") && open) {
+      event.preventDefault();
+      choose(activeIndex);
+    } else if ((event.key === "Enter" || event.key === " " || event.key === "Spacebar") && !open) {
+      event.preventDefault();
+      showOptions();
+    } else if (event.key === "Escape" && open) {
+      event.preventDefault();
+      setOpen(false);
+    } else if (event.key === "Tab" && open) {
+      setOpen(false);
+    }
+  }
+
+  return <div className="custom-field" ref={root}>
+    <label id={labelId} htmlFor={id}>{label}</label>
+    <input type="hidden" name={name} value={value} />
+    <button ref={trigger} id={id} type="button" className="form-dropdown-trigger" role="combobox" aria-labelledby={labelId} aria-valuetext={selected?.label || placeholder} aria-haspopup="listbox" aria-expanded={open} aria-controls={listId} aria-activedescendant={open ? `${id}-option-${activeIndex}` : undefined} onClick={() => open ? setOpen(false) : showOptions()} onKeyDown={handleKeyDown}>
+      <span className={selected ? "" : "form-dropdown-placeholder"}>{selected?.label || placeholder}</span><ChevronDown size={16} aria-hidden="true" />
+    </button>
+    {open && <ul className="form-dropdown-menu" id={listId} role="listbox" aria-labelledby={labelId}>
+      {options.map((option, index) => <li key={option.value} id={`${id}-option-${index}`} className="form-dropdown-option" role="option" aria-selected={value === option.value} data-active={activeIndex === index} onMouseEnter={() => setActiveIndex(index)} onClick={() => choose(index)}>{option.label}</li>)}
+    </ul>}
+  </div>;
+}
 
 function CommissionForm({ site }: { site: Site }) {
   const [files, setFiles] = useState<File[]>([]);
@@ -81,7 +149,10 @@ function CommissionForm({ site }: { site: Site }) {
   if (emailDraft) return <div className="request-success" role="status"><p className="eyebrow">EMAIL DRAFT READY</p><h3>Review and send.</h3><p>Your answers are ready to open in your email app. Add any reference files there, then send the email.</p><a className="button button-primary" href={emailDraft.href}>Open email draft <ArrowUpRight size={18} /></a><button type="button" className="text-button" onClick={async () => { try { await navigator.clipboard.writeText(emailDraft.body); setCopied(true); } catch { setError("Select the text below and copy it."); } }}>{copied ? "Copied" : "Copy enquiry text"}</button><details className="draft-details"><summary>View enquiry text</summary><pre>{emailDraft.body}</pre></details><button type="button" className="text-button" onClick={() => setEmailDraft(null)}>Back to form</button><small>This enquiry has not been sent or saved to the website.</small>{error && <p className="form-error" role="alert">{error}</p>}</div>;
   const unavailable = (PAGES_MODE && !BACKEND_URL) || (site.readiness !== undefined && (!site.readiness.database || !site.readiness.admin));
   useEffect(() => { setBudgetCurrency(detectBudgetCurrency()); }, []);
-  const budgetRanges = BUDGET_RANGES[budgetCurrency];
+  const budgetChoices = [...BUDGET_RANGES[budgetCurrency].map(range => ({ label: range, value: budgetCurrency === "OTHER" ? range + " (currency not detected)" : range })), { label: "No set budget", value: "No set budget" }, { label: "Not sure yet", value: "Not sure yet" }];
+  const timelineChoices = ["As soon as possible (within 1 week)", "1–2 weeks", "2–4 weeks", "1–2 months", "2–3 months", "3+ months", "No deadline", "Not sure yet"].map(range => ({ label: range, value: range }));
+  const [budget, setBudget] = useState("");
+  const [timeline, setTimeline] = useState("");
   return (
     <form className="commission-form" onSubmit={submit}>
       <div className="form-heading">
@@ -106,25 +177,8 @@ function CommissionForm({ site }: { site: Site }) {
       <section className="form-group" aria-labelledby="form-planning-title">
         <div className="form-section-label"><span className="form-section-number">03</span><div><strong id="form-planning-title">Budget and timing <span className="optional">optional</span></strong><span>Choose a rough range, or tell me you’re unsure.</span></div></div>
         <div className="form-row">
-          <label>Budget
-            <select name="budget" defaultValue="">
-              <option value="">Choose a budget range</option>
-              {budgetRanges.map(range => <option key={range} value={budgetCurrency === "OTHER" ? range + " (currency not detected)" : range}>{range}</option>)}
-              <option>No set budget</option>
-              <option>Not sure yet</option>
-            </select>
-          </label>
-          <label>Timeline
-            <select name="timeline" defaultValue="">
-              <option value="">Choose a timeframe</option>
-              <option>Within 1–2 weeks</option>
-              <option>2–4 weeks</option>
-              <option>1–2 months</option>
-              <option>More than 2 months</option>
-              <option>No deadline</option>
-              <option>Not sure yet</option>
-            </select>
-          </label>
+          <FormDropdown name="budget" label="Budget" placeholder="Choose a budget range" options={budgetChoices} value={budget} onChange={setBudget} />
+          <FormDropdown name="timeline" label="Timeline" placeholder="Choose a timeframe" options={timelineChoices} value={timeline} onChange={setTimeline} />
         </div>
         <p className="field-hint">{budgetCurrency === "OTHER" ? "Your region wasn’t detected, so ranges are shown without a currency symbol. We can confirm it together." : "Rough ranges in your local currency. We’ll agree on the scope and final price together."}</p>
       </section>
