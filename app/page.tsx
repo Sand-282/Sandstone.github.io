@@ -76,6 +76,10 @@ export default function Home({ initialView = "home" }: { initialView?: "home" | 
         if (next !== "home" || new URLSearchParams(window.location.search).get("portal") === "1" || access) setPortalMode(next === "admin" ? "admin" : "portal");
         return;
       }
+      if (next !== "home" && window.location.hostname.endsWith(".workers.dev") && !new URLSearchParams(window.location.search).has("embed")) {
+        window.location.replace(`https://sand-282.github.io/Sandstone.github.io/?view=${next}${window.location.hash}`);
+        return;
+      }
       setView(next);
     };
     readView(); window.addEventListener("popstate", readView);
