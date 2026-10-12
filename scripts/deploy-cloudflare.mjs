@@ -7,6 +7,7 @@ export const ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const WORKER_NAME = 'sandstone-commissions';
 export const DATABASE_NAME = 'sandstone-commissions-db';
 export const BUCKET_NAME = 'sandstone-commissions-uploads';
+export const GMAIL_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycby5D5hzA9zQASCYQequPhgaRfTnQh9LFg3fSu68pezLMj-7YVQVjcM5_CVg8i5C3-1k6g/exec';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PLACEHOLDER_UUID = '00000000-0000-4000-8000-000000000000';
 
@@ -101,6 +102,7 @@ export function prepareConfig(settings, resources, root = ROOT) {
     PAGES_ORIGIN: settings.pagesOrigin,
     SITE_URL: resources.siteUrl,
     EMAIL_FROM: settings.emailFrom,
+    GMAIL_BRIDGE_URL,
   };
   config.d1_databases = [{ binding: 'DB', database_name: DATABASE_NAME, database_id: resources.databaseId, migrations_dir: '../../drizzle' }];
   config.r2_buckets = []; // Free D1 attachment storage requires no R2 subscription.
@@ -174,3 +176,4 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     process.exitCode = 1;
   }
 }
+
