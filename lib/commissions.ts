@@ -33,7 +33,13 @@ export function authMode(): "sites" | "standalone" {
 export function adminConfigured(): boolean {
   return !!env.ADMIN_EMAIL?.trim() && (authMode() === "sites" || new TextEncoder().encode(env.ADMIN_PASSWORD ?? "").length >= 16);
 }
-export function emailConfigured(): boolean { return !!(env.ADMIN_EMAIL?.trim() && env.RESEND_API_KEY?.trim() && env.EMAIL_FROM?.trim()); }
+function gmailBridgeConfigured(): boolean {
+  try {
+    const url = new URL(env.GMAIL_BRIDGE_URL ?? "");
+    return url.protocol === "https:" && url.hostname === "script.google.com" && /^\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url.pathname) && !url.search && !url.hash && (env.GMAIL_BRIDGE_TOKEN?.length ?? 0) >= 32;
+  } catch { return false; }
+}
+export function emailConfigured(): boolean { return !!env.ADMIN_EMAIL?.trim() && (gmailBridgeConfigured() || !!(env.RESEND_API_KEY?.trim() && env.EMAIL_FROM?.trim())); }
 
 export function pagesOrigin(): string | undefined {
   if (authMode() !== "standalone" || !env.PAGES_ORIGIN) return;
@@ -243,14 +249,19 @@ export async function deliverMail(id: string): Promise<{ id: string; state: stri
     return { id, state: existing?.state ?? "pending" };
   }
   try {
-    // Resend's provider idempotency key suppresses retries when the first response was lost.
-    const response = await fetch("https://api.resend.com/emails", {
+    const useGmail = gmailBridgeConfigured();
+    const response = await fetch(useGmail ? env.GMAIL_BRIDGE_URL! : "https://api.resend.com/emails", useGmail ? {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: env.GMAIL_BRIDGE_TOKEN, id, to: claim.recipient, subject: claim.subject, text: claim.body, replyTo: claim.reply_to ?? "" }),
+      signal: AbortSignal.timeout(12000),
+    } : {
+      // Resend's idempotency key suppresses retries when the first response was lost.
       method: "POST", headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json", "Idempotency-Key": `bedrock-${id}` },
       body: JSON.stringify({ from: env.EMAIL_FROM, to: [claim.recipient], subject: claim.subject, text: claim.body, ...(claim.reply_to ? { reply_to: claim.reply_to } : {}) }),
       signal: AbortSignal.timeout(12000),
     });
     const result = await response.json() as { id?: string; message?: string; name?: string };
-    if (!response.ok || !result.id) throw new Error(`Email provider ${response.status}: ${result.message ?? result.name ?? "Delivery was not confirmed"}`);
+    if (!response.ok || !result.id || (useGmail && result.id !== id)) throw new Error(`Email provider ${response.status}: ${result.message ?? result.name ?? "Delivery was not confirmed"}`);
     // The raw magic link is retained only while delivery is pending; completed bodies are removed.
     await db.prepare("UPDATE email_outbox SET state='sent', provider_id=?, sent_at=?, error=NULL, body='' WHERE id=?").bind(result.id, NOW(), id).run();
     return { id, state: "sent" };
@@ -313,3 +324,4 @@ export async function multipart(request: Request, maxSize = 21 * 1024 * 1024, al
     throw new ApiError(400, "The uploaded form could not be read.");
   }
 }
+
