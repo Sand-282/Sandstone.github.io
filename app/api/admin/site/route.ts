@@ -25,7 +25,7 @@ export async function PUT(request: Request) {
       const accent = stringField(p.accent ?? "green", "Accent", 30);
       projects.push({ id, title: stringField(p.title, "Project title", 100, 2), category: stringField(p.category ?? "Scripting", "Category", 60, 2), description: stringField(p.description ?? "", "Project description", 500), image, accent });
     }
-    if (!Array.isArray(input.boxes) || input.boxes.length !== 3) throw new ApiError(400, "The website needs exactly three content boxes.");
+    if (!Array.isArray(input.boxes) || input.boxes.length > 6) throw new ApiError(400, "Add up to six showcase items.");
     const boxes = [];
     for (const entry of input.boxes) {
       if (!entry || typeof entry !== "object") throw new ApiError(400, "A content box is invalid.");
@@ -46,9 +46,9 @@ export async function PUT(request: Request) {
       if (preview && !/^\/showcase\/[\w./-]+\.(png|jpg|jpeg|webp|gif)$/i.test(preview)) throw new ApiError(400, "Use a bundled showcase image for the video preview.");
       boxes.push({ title: stringField(box.title ?? "", "Box title", 100), text: stringField(box.text ?? "", "Box text", 500), media, mediaType, alt: stringField(box.alt ?? "", "Image description", 250), preview });
     }
+    while (boxes.length < 6) boxes.push({ title: "", text: "", media: "", mediaType: "image" as const, alt: "", preview: "" });
     const site = { brand, intro, availability, projects, boxes };
     await database().prepare("INSERT INTO site_content(id,value,updated_at) VALUES('public',?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(JSON.stringify(site), NOW()).run();
     return json({ ...site, saved: true });
   });
 }
-

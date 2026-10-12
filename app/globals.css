@@ -55,3 +55,56 @@
 @media(max-width:760px){.home-hero,.home-hero.has-work{grid-template-columns:1fr;gap:30px;min-height:0;padding:60px 0}.hero-work{gap:9px}.hero-work-card{min-height:100px}.hero-work-media{flex-basis:100px;width:100px;min-height:100px}.hero-work-copy{padding:11px 13px}.tools-row{grid-template-columns:1fr}.tools-row>div,.tools-row>div:first-child{min-height:70px;padding:13px 0;border-right:0;border-bottom:1px solid #303030}.tools-row>p{grid-column:auto}.hero-copy h1{font-size:clamp(41px,9.5vw,56px)}}
 @media(max-width:390px){.hero-work-media{flex-basis:86px;width:86px;min-height:92px}.hero-work-copy strong{font-size:13px}.hero-work-copy>span{font-size:10px}}
 
+/* Homepage showcase and compact three-link header. */
+.site-header{height:72px}
+.header-inner{grid-template-columns:1fr auto}
+.main-nav{display:flex;justify-content:flex-end;gap:30px}
+.main-nav a,.main-nav button{display:inline-flex;align-items:center;gap:8px;color:#cbc8c2;font-size:12px;min-height:44px}
+.main-nav a:hover,.main-nav button:hover{color:#f27b42}
+.main-nav svg{width:17px;height:17px;color:#f27b42}
+.home-hero,.home-hero.has-work{grid-template-columns:minmax(0,1.35fr) minmax(300px,.78fr);gap:clamp(35px,5vw,72px);min-height:570px;padding:66px 0 76px}
+.hero-work{grid-column:1;grid-row:1;align-self:center;min-width:0;display:block}
+.hero-copy{grid-column:2;grid-row:1;max-width:480px}
+.hero-copy h1{font-size:clamp(40px,4.5vw,58px);line-height:1.1;letter-spacing:-2.4px}
+.hero-work .showcase-frame{width:100%;aspect-ratio:1.5;background:#0c0c0c;border:1px solid #272727;border-radius:4px;overflow:hidden}
+.showcase-track{display:flex;width:100%;height:100%;transition:transform .5s ease}
+.showcase-slide{display:flex;align-items:center;justify-content:center;flex:0 0 100%;width:100%;height:100%;min-width:0;padding:18px;border:0;background:#0c0c0c;cursor:zoom-in}
+.showcase-slide:focus-visible{outline:2px solid #f27b42;outline-offset:-4px}
+.showcase-slide img,.showcase-slide video{display:block;width:100%;height:100%;object-fit:contain;object-position:center}
+.showcase-caption{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:17px 0 0}
+.showcase-caption>div:first-child{min-width:0}
+.showcase-caption .eyebrow{font-size:9px;color:#a7a39b;letter-spacing:1.1px}
+.showcase-caption h2{margin-top:5px;font-size:16px;font-weight:550;color:#f0eee9}
+.showcase-caption p{margin-top:5px;max-width:550px;color:#9d9a94;font-size:12px;line-height:1.55}
+.showcase-controls{display:flex;flex:none;align-items:center;gap:8px}
+.showcase-controls>span{margin-right:8px;color:#9b9891;font-size:10px;font-variant-numeric:tabular-nums}
+.showcase-controls button{display:grid;place-items:center;width:36px;height:36px;border:1px solid #343434;border-radius:3px;background:transparent;color:#e5e2dc}
+.showcase-controls button:hover{border-color:#a75f37;color:#f27b42}
+.showcase-controls button:focus-visible,.showcase-dots button:focus-visible{outline:2px solid #f27b42;outline-offset:2px}
+.showcase-dots{display:flex;gap:7px;padding-top:13px}
+.showcase-dots button{width:19px;height:3px;padding:0;border:0;background:#4a4844;cursor:pointer}
+.showcase-dots button[aria-current=true]{background:#f27b42}
+.availability{margin-top:17px}
+.landing-cta{margin-top:20px}
+@media(max-width:760px){
+ .site-header{height:auto;min-height:66px}
+ .header-inner{width:calc(100% - 36px);min-height:66px;grid-template-columns:1fr auto}
+ .main-nav{display:flex;grid-column:2;grid-row:1;gap:14px;margin:0;padding:0;border:0;flex-direction:row;align-items:center}
+ .main-nav a,.main-nav button{min-height:44px;border:0;font-size:0;gap:0;justify-content:center}
+ .main-nav svg{width:19px;height:19px}
+ .main-nav button svg{width:18px;height:18px}
+ .home-hero,.home-hero.has-work{display:flex;flex-direction:column;align-items:stretch;gap:30px;width:calc(100% - 40px);min-height:0;padding:35px 0 54px}
+ .hero-work{order:0}
+ .hero-copy{order:1;max-width:none}
+ .hero-work .showcase-frame{aspect-ratio:1.2}
+ .showcase-slide{padding:10px}
+ .showcase-caption{align-items:flex-start;padding-top:13px}
+ .showcase-caption h2{font-size:15px}
+ .showcase-caption p{font-size:11px}
+ .showcase-controls{gap:5px}
+ .showcase-controls>span{margin-right:2px}
+ .showcase-controls button{width:34px;height:34px}
+ .hero-copy h1{font-size:clamp(38px,9vw,52px)}
+}
+@media(max-width:390px){.showcase-controls>span{display:none}.showcase-caption{gap:8px}.main-nav{gap:10px}}
+@media(prefers-reduced-motion:reduce){.showcase-track{transition:none}}

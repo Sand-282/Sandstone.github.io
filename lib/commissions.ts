@@ -286,7 +286,7 @@ export function notificationSummary(results: { id: string; state: string; error?
 export const defaultSite = {
   brand: "sandstone", intro: "Custom Minecraft Bedrock scripting & behaviour. Thoughtful mechanics, built around your world.",
   availability: "Open for commissions", projects: [] as { id: string; title: string; category: string; description: string; image: string; accent?: string }[],
-  boxes: [1, 2, 3].map(() => ({ title: "", text: "", media: "", mediaType: "image" as const, alt: "" })),
+  boxes: Array.from({ length: 6 }, () => ({ title: "", text: "", media: "", mediaType: "image" as const, alt: "", preview: "" })),
 };
 
 export async function getSite() {
@@ -294,7 +294,9 @@ export async function getSite() {
   const row = await database().prepare("SELECT value FROM site_content WHERE id='public'").first<{ value: string }>();
   if (!row) return defaultSite;
   const saved = JSON.parse(row.value) as Partial<typeof defaultSite>;
-  return { ...defaultSite, ...saved, boxes: Array.isArray(saved.boxes) && saved.boxes.length === 3 ? saved.boxes : defaultSite.boxes };
+  const boxes = Array.isArray(saved.boxes) ? saved.boxes.slice(0, 6) : [];
+  while (boxes.length < 6) boxes.push(defaultSite.boxes[boxes.length]);
+  return { ...defaultSite, ...saved, boxes };
 }
 
 export function validateRequestFields(form: FormData) {
@@ -324,4 +326,3 @@ export async function multipart(request: Request, maxSize = 21 * 1024 * 1024, al
     throw new ApiError(400, "The uploaded form could not be read.");
   }
 }
-

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ArrowUpRight, Check, Paperclip, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, Check, LockKeyhole, Paperclip, X } from "lucide-react";
 import Workspace from "../components/Workspace";
 
 type Project = { id: string; title: string; category: string; description: string; image: string; accent?: string };
@@ -13,7 +13,7 @@ const CONTACT_URL = "mailto:cjgsinclare@gmail.com";
 const apiUrl = (path: string) => PAGES_MODE && BACKEND_URL ? new URL(path, `${BACKEND_URL}/`).href : path;
 const mediaUrl = (path: string) => path.startsWith("/api/") ? apiUrl(path) : path;
 const workspaceUrl = (path: "/portal" | "/admin") => PAGES_MODE ? (BACKEND_URL ? apiUrl(path) : CONTACT_URL) : path;
-const initialSite: Site = { brand: "sandstone", intro: "Minecraft Bedrock scripting and behaviour", availability: "Open for commissions", projects: [], boxes: Array.from({ length: 3 }, () => ({ title: "", text: "", media: "", mediaType: "image" })), ...(PAGES_MODE ? { readiness: { database: false, uploads: false, email: false, admin: false } } : {}) };
+const initialSite: Site = { brand: "sandstone", intro: "Minecraft Bedrock scripting and behaviour", availability: "Open for commissions", projects: [], boxes: Array.from({ length: 6 }, () => ({ title: "", text: "", media: "", mediaType: "image" })), ...(PAGES_MODE ? { readiness: { database: false, uploads: false, email: false, admin: false } } : {}) };
 const discord = "https://discord.gg/KFaT7f3xTN";
 const curseforge = "https://www.curseforge.com/members/sand282/projects";
 
@@ -66,8 +66,14 @@ export default function Home({ initialView = "home" }: { initialView?: "home" | 
   const [portalMode, setPortalMode] = useState<"portal" | "admin" | null>(null);
   const [portalAccess, setPortalAccess] = useState("");
   const [selectedWork, setSelectedWork] = useState<Box | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeWorkIndex, setActiveWorkIndex] = useState(0);
+  const [pauseShowcase, setPauseShowcase] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
+  const boxes = (site.boxes || initialSite.boxes).slice(0, 6);
+  const portfolioItems: Box[] = boxes.filter(box => box.media).length
+    ? boxes.filter(box => box.media)
+    : (site.projects || []).slice(0, 6).filter(project => project.image).map(project => ({ title: project.title, text: project.description, media: project.image, mediaType: "image", alt: project.title }));
+  const setWork = (index: number) => setActiveWorkIndex((index + portfolioItems.length) % portfolioItems.length);
   useEffect(() => {
     const readView = () => {
       const query = new URLSearchParams(window.location.search).get("view");
@@ -99,23 +105,27 @@ export default function Home({ initialView = "home" }: { initialView?: "home" | 
     return () => { document.body.style.overflow = previous; };
   }, [formOpen]);
   useEffect(() => { if (!portalMode) return; const before = document.body.style.overflow; document.body.style.overflow = "hidden"; const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { setPortalMode(null); setPortalAccess(""); window.history.replaceState({}, "", window.location.pathname); } }; window.addEventListener("keydown", escape); return () => { document.body.style.overflow = before; window.removeEventListener("keydown", escape); }; }, [portalMode]);
+  useEffect(() => {
+    if (pauseShowcase || portfolioItems.length < 2) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (reduced.matches) return;
+    const timer = window.setInterval(() => setActiveWorkIndex(index => (index + 1) % portfolioItems.length), 6500);
+    return () => window.clearInterval(timer);
+  }, [pauseShowcase, portfolioItems.length]);
   if (!PAGES_MODE && view !== "home") return <Workspace mode={view} onHome={() => { window.top?.location.assign("https://sand-282.github.io/Sandstone.github.io/"); }} />;
   const brand = site.brand || "sandstone";
   const openForm = () => { dialog.current?.showModal(); setFormOpen(true); };
   const openPortal = (mode: "portal" | "admin") => { setPortalMode(mode); window.history.pushState({}, "", `?view=${mode}`); };
   const closePortal = () => { setPortalMode(null); setPortalAccess(""); window.history.replaceState({}, "", window.location.pathname); };
   const portalSrc = portalMode ? `${workspaceUrl(`/${portalMode}`)}?embed=1${portalAccess ? `#access=${encodeURIComponent(portalAccess)}` : ""}` : "";
-  const boxes = (site.boxes || initialSite.boxes).slice(0, 3);
-  const portfolioItems: Box[] = boxes.filter(box => box.title || box.text || box.media).length
-    ? boxes.filter(box => box.title || box.text || box.media)
-    : (site.projects || []).slice(0, 3).filter(project => project.title || project.description || project.image).map(project => ({
-      title: project.title, text: project.description, media: project.image, mediaType: "image", alt: project.title,
-    }));
   return <div className="public-site">
     <a className="skip-link" href="#main">Skip to content</a>
-    <header className="site-header"><div className="header-inner"><a className="wordmark" href="#main" aria-label={`${brand} home`}>{brand}<span>.</span></a><button type="button" className="mobile-menu-toggle" aria-expanded={mobileMenuOpen} aria-controls="main-navigation" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>Menu <span aria-hidden="true">{mobileMenuOpen ? "−" : "+"}</span></button><nav id="main-navigation" className={`main-nav ${mobileMenuOpen ? "main-nav-open" : ""}`} aria-label="Main navigation">{portfolioItems.length > 0 && <a href="#work" onClick={() => setMobileMenuOpen(false)}>Work</a>}<a href="#process" onClick={() => setMobileMenuOpen(false)}>Process</a><a href="#tools" onClick={() => setMobileMenuOpen(false)}>Tools</a><a className="secondary-nav" href={discord} target="_blank" rel="noopener noreferrer">Discord</a><a className="secondary-nav" href={curseforge} target="_blank" rel="noopener noreferrer">CurseForge</a><button type="button" onClick={() => openPortal("portal")}>Client Portal <span className="nav-hint">existing clients</span></button></nav></div></header>
+    <header className="site-header"><div className="header-inner"><a className="wordmark" href="#main" aria-label={`${brand} home`}>{brand}<span>.</span></a><nav className="main-nav" aria-label="Quick links"><a href={discord} target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M19.7 5.3A18 18 0 0 0 15.3 4l-.5 1a16 16 0 0 0-5.6 0l-.5-1a18 18 0 0 0-4.4 1.3C1.5 9.5.8 13.6 1.2 17.6a18 18 0 0 0 5.4 2.7l1.2-2a11 11 0 0 1-1.9-.9l.5-.4a12.8 12.8 0 0 0 11.2 0l.5.4a11 11 0 0 1-1.9.9l1.2 2a18 18 0 0 0 5.4-2.7c.5-4.7-.8-8.8-3.1-12.3ZM8.8 14.8c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm6.4 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>Discord</a><a href={curseforge} target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M3 4h18l-2 4h-4l-2 12H8l2-12H6L3 4Zm3 5H3l-1 3h4l.5-3ZM2 14h4l-.5 3H1l1-3Z"/></svg>CurseForge</a><button type="button" onClick={() => openPortal("portal")}><LockKeyhole size={15} aria-hidden="true" />Client Portal</button></nav></div></header>
     <main id="main" className="landing-main">
-      <section className={`home-hero ${portfolioItems.length ? "has-work" : ""}`}><div className="hero-copy"><p className="eyebrow">MINECRAFT BEDROCK COMMISSIONS</p><h1>Bedrock add-ons.<br /><span>Built to your brief.</span></h1><p className="landing-description">I handle the scripting and behaviour work for custom Bedrock add-ons.</p><p className="landing-scope">I don’t make textures or models. Send your own assets and I can add them to the project.</p><div className="availability"><i aria-hidden="true" />{site.availability || "Open for commissions"}</div><button type="button" className="button button-primary landing-cta" onClick={openForm}>Get a Commission Quote <ArrowUpRight size={18} /></button><button type="button" className="portal-inline" onClick={() => openPortal("portal")}>Already have a commission? Open Client Portal <ArrowUpRight size={14} /></button></div>{portfolioItems.length > 0 && <div className="hero-work" id="work" aria-label="Work examples">{portfolioItems.map((box, index) => <button className="hero-work-card" key={`${box.title}-${index}`} type="button" onClick={() => box.media && setSelectedWork(box)} aria-label={box.media ? `View ${box.title || `project ${index + 1}`} larger` : box.title || `Project ${index + 1}`} disabled={!box.media}><span className="hero-work-media">{box.media ? box.mediaType === "video" ? <video src={mediaUrl(box.media)} poster={box.preview ? mediaUrl(box.preview) : undefined} muted playsInline preload="none" /> : <img src={mediaUrl(box.preview || box.media)} alt={box.alt || box.title || ""} loading="lazy" /> : <span className="hero-work-empty" />}</span><span className="hero-work-copy"><small>0{index + 1}</small><strong>{box.title || "Project"}</strong>{box.text && <span>{box.text}</span>}{box.media && <em>View larger</em>}</span></button>)}</div>}</section>
+      <section className={`home-hero ${portfolioItems.length ? "has-work" : ""}`}>
+        <div className="hero-copy"><p className="eyebrow">MINECRAFT BEDROCK COMMISSIONS</p><h1>Bedrock add-ons.<br /><span>Built to your brief.</span></h1><p className="landing-description">I handle the scripting and behaviour work for custom Bedrock add-ons.</p><p className="landing-scope">I don’t make textures or models. Send your own assets and I can add them to the project.</p><div className="availability"><i aria-hidden="true" />{site.availability || "Open for commissions"}</div><button type="button" className="button button-primary landing-cta" onClick={openForm}>Get a Commission Quote <ArrowUpRight size={18} /></button></div>
+        {portfolioItems.length > 0 && <section className="hero-work" id="work" aria-label="Work showcase" onMouseEnter={() => setPauseShowcase(true)} onMouseLeave={() => setPauseShowcase(false)} onFocus={() => setPauseShowcase(true)} onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPauseShowcase(false); }}><div className="showcase-frame"><div className="showcase-track" style={{ transform: `translateX(-${activeWorkIndex * 100}%)` }}>{portfolioItems.map((box, index) => <button className="showcase-slide" key={`${box.title}-${box.media}-${index}`} type="button" onClick={() => setSelectedWork(box)} aria-label={`View ${box.title || `project ${index + 1}`} larger`} aria-hidden={index !== activeWorkIndex} tabIndex={index === activeWorkIndex ? 0 : -1}>{box.mediaType === "video" ? <video src={mediaUrl(box.media)} poster={box.preview ? mediaUrl(box.preview) : undefined} muted playsInline preload="none" /> : <img src={mediaUrl(box.preview || box.media)} alt={box.alt || box.title || "Minecraft Bedrock project"} loading={index === 0 ? "eager" : "lazy"} />}</button>)}</div></div><div className="showcase-caption"><div><span className="eyebrow">SELECTED WORK</span><h2>{portfolioItems[activeWorkIndex]?.title || "Minecraft Bedrock project"}</h2>{portfolioItems[activeWorkIndex]?.text && <p>{portfolioItems[activeWorkIndex].text}</p>}</div><div className="showcase-controls"><span>{String(activeWorkIndex + 1).padStart(2, "0")} / {String(portfolioItems.length).padStart(2, "0")}</span><button type="button" aria-label="Previous project" onClick={() => setWork(activeWorkIndex - 1)}><ArrowLeft size={18} /></button><button type="button" aria-label="Next project" onClick={() => setWork(activeWorkIndex + 1)}><ArrowRight size={18} /></button></div></div>{portfolioItems.length > 1 && <div className="showcase-dots" aria-label="Choose a project">{portfolioItems.map((box, index) => <button type="button" key={index} aria-label={`Show project ${index + 1}: ${box.title || "Untitled"}`} aria-current={index === activeWorkIndex ? "true" : undefined} onClick={() => setWork(index)} />)}</div>}</section>}
+      </section>
       <section id="process" className="home-section process-section"><div className="section-heading"><div><p className="eyebrow">PROCESS</p><h2>From first message to delivery.</h2></div><p>The first request is only a discussion. You don’t commit to payment until we agree on the work and price.</p></div><ol className="process-steps"><li><span>01</span><h3>Send the idea</h3><p>Describe what you want, plus any references or assets you already have.</p></li><li><span>02</span><h3>Agree the plan</h3><p>I review it with you, then we settle the scope and price.</p></li><li><span>03</span><h3>Build it</h3><p>After acceptance, your private project page keeps messages, files and progress together.</p></li><li><span>04</span><h3>Review and finish</h3><p>We check the result, handle agreed revisions and complete the project.</p></li></ol></section>
       <section id="tools" className="home-section tools-section"><div className="section-heading"><div><p className="eyebrow">THE WORK</p><h2>Scripting, behaviour, testing.</h2></div><p>I work in the add-on files and test changes in Bedrock. Asset creation isn’t part of the service.</p></div><div className="tools-row"><div><strong>Script API</strong><span>Game logic and interactions</span></div><div><strong>Behaviour packs</strong><span>Entities, items and rules</span></div><div><strong>In-game testing</strong><span>Check changes in context</span></div><p>Have your own textures, models or sounds? I can implement them.</p></div></section>
     </main>
@@ -125,4 +135,3 @@ export default function Home({ initialView = "home" }: { initialView?: "home" | 
     <dialog ref={dialog} className="enquiry-dialog" aria-labelledby="enquiry-title" onClose={() => setFormOpen(false)} onClick={event => { if (event.target !== event.currentTarget) return; const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.current?.close(); }}><div className="dialog-heading"><div><h2 id="enquiry-title">Commission enquiry</h2><p>Describe what you would like made.</p></div><button type="button" className="dialog-close" aria-label="Close enquiry form" onClick={() => dialog.current?.close()}><X size={20} /></button></div><CommissionForm site={site} /><p className="privacy-note">Your details are used to review and discuss your enquiry. You can request removal by email.</p></dialog>
   </div>;
 }
-
