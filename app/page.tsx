@@ -19,10 +19,30 @@ const initialSite: Site = { brand: "sandstone", intro: "Minecraft Bedrock script
 const discord = "https://discord.gg/KFaT7f3xTN";
 const curseforge = "https://www.curseforge.com/members/sand282/projects";
 
+type BudgetCurrency = "USD" | "GBP" | "EUR" | "OTHER";
+const EURO_REGIONS = new Set(["AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE"]);
+function detectBudgetCurrency(): BudgetCurrency {
+  const locales = [...(navigator.languages || []), navigator.language];
+  for (const locale of locales) {
+    const region = locale.split(/[-_]/).slice(1).find(part => /^[a-z]{2}$/i.test(part))?.toUpperCase();
+    if (region === "GB") return "GBP";
+    if (region === "US") return "USD";
+    if (region && EURO_REGIONS.has(region)) return "EUR";
+  }
+  return "OTHER";
+}
+const BUDGET_RANGES: Record<BudgetCurrency, string[]> = {
+  USD: ["Under $25", "$25–$50", "$50–$100", "$100+"],
+  GBP: ["Under £20", "£20–£40", "£40–£80", "£80+"],
+  EUR: ["Under €25", "€25–€50", "€50–€100", "€100+"],
+  OTHER: ["Under 25", "25–50", "50–100", "100+"],
+};
+
 function CommissionForm({ site }: { site: Site }) {
   const [files, setFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState("");
   const [dragging, setDragging] = useState(false);
+  const [budgetCurrency, setBudgetCurrency] = useState<BudgetCurrency>("OTHER");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState<SavedRequest | null>(null);
@@ -60,6 +80,8 @@ function CommissionForm({ site }: { site: Site }) {
   if (saved) return <div className="request-success" role="status"><div className="success-icon"><Check size={25} /></div><p className="eyebrow">REQUEST SAVED</p><h3>Request saved.</h3><p>Your request for <strong>{saved.request.title}</strong> is waiting for review. Save your private page link.</p>{saved.email?.state === "sent" ? <p>A copy and your private link have been emailed to you.</p> : <p className="form-alert">Email delivery is not connected yet. Copy your private link before leaving.</p>}<a className="button button-primary" href={saved.portalUrl}>Open your project <ArrowUpRight size={18} /></a><button className="text-button" onClick={async () => { try { await navigator.clipboard.writeText(new URL(saved.portalUrl, window.location.origin).href); setCopied(true); } catch { setError("Select and copy the private link below."); } }}>{copied ? "Link copied" : "Copy private link"}</button><a className="private-link" href={saved.portalUrl}>{saved.portalUrl}</a><small>Keep this link private. You can use this link to manage your project after review.</small>{error && <p className="form-error">{error}</p>}</div>;
   if (emailDraft) return <div className="request-success" role="status"><p className="eyebrow">EMAIL DRAFT READY</p><h3>Review and send.</h3><p>Your answers are ready to open in your email app. Add any reference files there, then send the email.</p><a className="button button-primary" href={emailDraft.href}>Open email draft <ArrowUpRight size={18} /></a><button type="button" className="text-button" onClick={async () => { try { await navigator.clipboard.writeText(emailDraft.body); setCopied(true); } catch { setError("Select the text below and copy it."); } }}>{copied ? "Copied" : "Copy enquiry text"}</button><details className="draft-details"><summary>View enquiry text</summary><pre>{emailDraft.body}</pre></details><button type="button" className="text-button" onClick={() => setEmailDraft(null)}>Back to form</button><small>This enquiry has not been sent or saved to the website.</small>{error && <p className="form-error" role="alert">{error}</p>}</div>;
   const unavailable = (PAGES_MODE && !BACKEND_URL) || (site.readiness !== undefined && (!site.readiness.database || !site.readiness.admin));
+  useEffect(() => { setBudgetCurrency(detectBudgetCurrency()); }, []);
+  const budgetRanges = BUDGET_RANGES[budgetCurrency];
   return (
     <form className="commission-form" onSubmit={submit}>
       <div className="form-heading">
@@ -87,10 +109,7 @@ function CommissionForm({ site }: { site: Site }) {
           <label>Budget
             <select name="budget" defaultValue="">
               <option value="">Choose a budget range</option>
-              <option>Under $25 / £20</option>
-              <option>$25–$50 / £20–£40</option>
-              <option>$50–$100 / £40–£80</option>
-              <option>$100+ / £80+</option>
+              {budgetRanges.map(range => <option key={range} value={budgetCurrency === "OTHER" ? range + " (currency not detected)" : range}>{range}</option>)}
               <option>No set budget</option>
               <option>Not sure yet</option>
             </select>
@@ -107,7 +126,7 @@ function CommissionForm({ site }: { site: Site }) {
             </select>
           </label>
         </div>
-        <p className="field-hint">These are only starting points. We’ll agree on the scope and final price together.</p>
+        <p className="field-hint">{budgetCurrency === "OTHER" ? "Your region wasn’t detected, so ranges are shown without a currency symbol. We can confirm it together." : "Rough ranges in your local currency. We’ll agree on the scope and final price together."}</p>
       </section>
 
       <section className="form-group" aria-labelledby="form-assets-title">
