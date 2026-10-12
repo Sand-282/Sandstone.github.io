@@ -20,7 +20,7 @@ const discord = "https://discord.gg/KFaT7f3xTN";
 const curseforge = "https://www.curseforge.com/members/sand282/projects";
 
 type BudgetCurrency = "USD" | "GBP" | "EUR" | "OTHER";
-const EURO_REGIONS = new Set(["AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE"]);
+const EURO_REGIONS = new Set(["AT","BE","BG","HR","CY","EE","FI","FR","DE","GR","IE","IT","LV","LT","LU","MT","NL","PT","SK","SI","ES"]);
 function detectBudgetCurrency(): BudgetCurrency {
   const locales = [...(navigator.languages || []), navigator.language];
   for (const locale of locales) {
