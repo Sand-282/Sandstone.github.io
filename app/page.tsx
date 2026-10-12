@@ -58,7 +58,75 @@ function CommissionForm({ site }: { site: Site }) {
   if (saved) return <div className="request-success" role="status"><div className="success-icon"><Check size={25} /></div><p className="eyebrow">REQUEST SAVED</p><h3>Request saved.</h3><p>Your request for <strong>{saved.request.title}</strong> is waiting for review. Save your private page link.</p>{saved.email?.state === "sent" ? <p>A copy and your private link have been emailed to you.</p> : <p className="form-alert">Email delivery is not connected yet. Copy your private link before leaving.</p>}<a className="button button-primary" href={saved.portalUrl}>Open your project <ArrowUpRight size={18} /></a><button className="text-button" onClick={async () => { try { await navigator.clipboard.writeText(new URL(saved.portalUrl, window.location.origin).href); setCopied(true); } catch { setError("Select and copy the private link below."); } }}>{copied ? "Link copied" : "Copy private link"}</button><a className="private-link" href={saved.portalUrl}>{saved.portalUrl}</a><small>Keep this link private. You can use this link to manage your project after review.</small>{error && <p className="form-error">{error}</p>}</div>;
   if (emailDraft) return <div className="request-success" role="status"><p className="eyebrow">EMAIL DRAFT READY</p><h3>Review and send.</h3><p>Your answers are ready to open in your email app. Add any reference files there, then send the email.</p><a className="button button-primary" href={emailDraft.href}>Open email draft <ArrowUpRight size={18} /></a><button type="button" className="text-button" onClick={async () => { try { await navigator.clipboard.writeText(emailDraft.body); setCopied(true); } catch { setError("Select the text below and copy it."); } }}>{copied ? "Copied" : "Copy enquiry text"}</button><details className="draft-details"><summary>View enquiry text</summary><pre>{emailDraft.body}</pre></details><button type="button" className="text-button" onClick={() => setEmailDraft(null)}>Back to form</button><small>This enquiry has not been sent or saved to the website.</small>{error && <p className="form-error" role="alert">{error}</p>}</div>;
   const unavailable = (PAGES_MODE && !BACKEND_URL) || (site.readiness !== undefined && (!site.readiness.database || !site.readiness.admin));
-  return <form className="commission-form" onSubmit={submit}><div className="form-heading"><span className="eyebrow">COMMISSION QUOTE</span><span>No account needed</span></div><div className="form-section-label"><strong>Your details</strong><span>Used to reply about this project</span></div><div className="form-row"><label>Your name <input name="name" autoComplete="name" placeholder="What should I call you?" required minLength={2} maxLength={80} /></label><label>Email address <input name="email" type="email" autoComplete="email" placeholder="you@example.com" required maxLength={254} /></label></div><div className="form-section-label"><strong>Project</strong><span>Start with the main idea</span></div><label>Project name <input name="title" placeholder="Give your idea a short name" required minLength={3} maxLength={120} /></label><label>What would you like made? <textarea name="description" rows={5} placeholder="What should it do in game? Tell me what you have so far." required minLength={20} maxLength={8000} /><small>At least 20 characters is enough to start.</small></label><div className="form-section-label"><strong>Budget and timing <span className="optional">optional</span></strong><span>It’s fine if you’re not sure yet</span></div><div className="form-row"><label>Budget <span className="optional">optional</span><input name="budget" placeholder="A range, or let's discuss" maxLength={120} /></label><label>Timeline <span className="optional">optional</span><input name="timeline" placeholder="Any deadline in mind?" maxLength={120} /></label></div><div className="form-section-label"><strong>Assets and references <span className="optional">optional</span></strong><span>Your own assets can be implemented into the add-on</span></div><label>What do you already have? <textarea name="assets" rows={2} placeholder="Models, textures, sounds or an existing add-on" maxLength={2000} /></label>{!unavailable && <label className="file-drop"><input type="file" multiple accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.zip,.mcpack,.mcaddon,.json,.txt" onChange={event => { selectFiles(event.target.files); event.target.value = ""; }} /><Paperclip size={18} /><strong>Drop files here or choose files</strong><span>Up to 5 files · 10 MB each · 20 MB total</span></label>}{files.length > 0 && <ul className="file-list">{files.map((file, index) => <li key={`${file.name}-${index}`}><span>{file.name}</span><button type="button" aria-label={`Remove ${file.name}`} onClick={() => setFiles(files.filter((_, i) => i !== index))}><X size={16} /></button></li>)}</ul>}<label className="honeypot" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label><label className="consent"><input name="consent" type="checkbox" value="true" required /><span>I agree to my details being used to discuss this commission.</span></label>{unavailable && <p className="form-note">For now, this form prepares an email. You can review your answers and attach files in your email app before sending.</p>}{error && <p className="form-error" role="alert">{error}</p>}<div className="no-commitment"><strong>No commitment until we agree on scope and price.</strong><span>Submitting this form starts a discussion. You’ll receive a private project link after it’s saved.</span></div><button type="submit" className="button button-primary form-submit" disabled={submitting}>{submitting ? "Sending…" : unavailable ? "Prepare quote request" : "Send quote request"}<ArrowUpRight size={18} /></button></form>;
+  return (
+    <form className="commission-form" onSubmit={submit}>
+      <div className="form-heading">
+        <div><span className="eyebrow">COMMISSION QUOTE</span><p>Share the idea. We’ll work out the details together.</p></div>
+        <span className="form-account-note">No account needed</span>
+      </div>
+
+      <section className="form-group" aria-labelledby="form-details-title">
+        <div className="form-section-label"><span className="form-section-number">01</span><div><strong id="form-details-title">Your details</strong><span>So I can reply about your project.</span></div></div>
+        <div className="form-row">
+          <label>Your name<input name="name" autoComplete="name" placeholder="What should I call you?" required minLength={2} maxLength={80} /></label>
+          <label>Email address<input name="email" type="email" autoComplete="email" placeholder="you@example.com" required maxLength={254} /></label>
+        </div>
+      </section>
+
+      <section className="form-group" aria-labelledby="form-project-title">
+        <div className="form-section-label"><span className="form-section-number">02</span><div><strong id="form-project-title">Your project</strong><span>A rough description is enough to start.</span></div></div>
+        <label>Project name<input name="title" placeholder="Give your idea a short name" required minLength={3} maxLength={120} /></label>
+        <label>What would you like made?<textarea name="description" rows={4} placeholder="What should it do in game? Include any features you have in mind." required minLength={20} maxLength={8000} /><small>It doesn’t need to be a technical explanation.</small></label>
+      </section>
+
+      <section className="form-group" aria-labelledby="form-planning-title">
+        <div className="form-section-label"><span className="form-section-number">03</span><div><strong id="form-planning-title">Budget and timing <span className="optional">optional</span></strong><span>Choose a rough range, or tell me you’re unsure.</span></div></div>
+        <div className="form-row">
+          <label>Budget
+            <select name="budget" defaultValue="">
+              <option value="">Choose a budget range</option>
+              <option>Under $25 / £20</option>
+              <option>$25–$50 / £20–£40</option>
+              <option>$50–$100 / £40–£80</option>
+              <option>$100+ / £80+</option>
+              <option>No set budget</option>
+              <option>Not sure yet</option>
+            </select>
+          </label>
+          <label>Timeline
+            <select name="timeline" defaultValue="">
+              <option value="">Choose a timeframe</option>
+              <option>Within 1–2 weeks</option>
+              <option>2–4 weeks</option>
+              <option>1–2 months</option>
+              <option>More than 2 months</option>
+              <option>No deadline</option>
+              <option>Not sure yet</option>
+            </select>
+          </label>
+        </div>
+        <p className="field-hint">These are only starting points. We’ll agree on the scope and final price together.</p>
+      </section>
+
+      <section className="form-group" aria-labelledby="form-assets-title">
+        <div className="form-section-label"><span className="form-section-number">04</span><div><strong id="form-assets-title">Assets and references <span className="optional">optional</span></strong><span>Send anything that helps explain your idea.</span></div></div>
+        <label>What do you already have?<textarea name="assets" rows={2} placeholder="Your own models, textures, sounds or an existing add-on" maxLength={2000} /></label>
+        {!unavailable && <label className={dragging ? "file-drop file-drop-active" : "file-drop"} onDragOver={event => { event.preventDefault(); setDragging(true); }} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }} onDrop={event => { event.preventDefault(); setDragging(false); selectFiles(event.dataTransfer.files); }}>
+          <input type="file" multiple accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.zip,.mcpack,.mcaddon,.json,.txt" onChange={event => { selectFiles(event.target.files); event.target.value = ""; }} />
+          <Paperclip size={18} /><span className="file-drop-copy"><strong>{dragging ? "Drop files to attach" : "Add project files"}</strong><span>Drop files here or choose from your device</span></span><span className="file-limit">5 files · 10 MB each</span>
+        </label>}
+        {fileError && <p className="form-error file-error" role="alert">{fileError}</p>}
+        {files.length > 0 && <ul className="file-list">{files.map((file, index) => <li key={file.name + index}><span>{file.name}<small>{(file.size / 1024 / 1024).toFixed(1)} MB</small></span><button type="button" aria-label={"Remove " + file.name} onClick={() => { setFiles(files.filter((_, i) => i !== index)); setFileError(""); }}><X size={16} /></button></li>)}</ul>}
+      </section>
+
+      <label className="honeypot" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label>
+      <label className="consent"><input name="consent" type="checkbox" value="true" required /><span>I agree to my details being used to discuss this commission.</span></label>
+      {unavailable && <p className="form-note">This form will open a ready-to-send email. You can attach files there before sending.</p>}
+      {error && <p className="form-error" role="alert">{error}</p>}
+      <div className="no-commitment"><strong>No commitment until we agree on scope and price.</strong><span>Submitting this form starts a discussion. You’ll receive a private project link after it’s saved.</span></div>
+      <button type="submit" className="button button-primary form-submit" disabled={submitting}>{submitting ? "Sending…" : unavailable ? "Prepare quote request" : "Send quote request"}<ArrowUpRight size={18} /></button>
+    </form>
+  );
 }
 
 export default function Home({ initialView = "home" }: { initialView?: "home" | "admin" | "portal" }) {
