@@ -84,6 +84,10 @@
 .showcase-dots{display:flex;gap:7px;padding-top:13px}
 .showcase-dots button{width:19px;height:3px;padding:0;border:0;background:#4a4844;cursor:pointer}
 .showcase-dots button[aria-current=true]{background:#f27b42}
+.showcase-empty{display:grid;align-content:center;gap:9px;width:100%;aspect-ratio:1.5;padding:22px;border:1px solid #272727;border-radius:4px;background:#0c0c0c;color:#8e8b85}
+.showcase-empty .eyebrow{font-size:9px;color:#a7a39b;letter-spacing:1.1px}
+.showcase-empty p{font-size:13px}
+.ws-content-capacity{margin:16px 0 0;padding:11px 13px;border-left:2px solid #f27b42;background:#211811;color:#d7c4b6;font-size:12px;line-height:1.55}
 .availability{margin-top:17px}
 .landing-cta{margin-top:20px}
 @media(max-width:760px){
