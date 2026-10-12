@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       ...(previous ? [database().prepare("DELETE FROM admin_sessions WHERE hash=?").bind(await hash(previous))] : []),
       database().prepare("INSERT INTO admin_sessions(hash,owner_email,expires_at,created_at) VALUES(?,?,?,?)").bind(await hash(token), env.ADMIN_EMAIL!.trim().toLowerCase(), expiresAt, NOW()),
     ]);
-    return json({ loggedIn: true }, 200, { "set-cookie": adminCookie(token) });
+    return json({ loggedIn: true, sessionToken: token }, 200, { "set-cookie": adminCookie(token) });
   });
 }
 
@@ -28,7 +28,7 @@ export async function DELETE(request: Request) {
   return endpoint(async () => {
     assertSameOrigin(request);
     if (authMode() !== "standalone") throw new ApiError(404, "This sign-in method is not available.");
-    const token = cookieToken(request, ADMIN_COOKIE);
+    const token = request.headers.get("authorization")?.match(/^Bearer ([A-Za-z0-9_-]{43})$/)?.[1] || cookieToken(request, ADMIN_COOKIE);
     if (token) await database().prepare("DELETE FROM admin_sessions WHERE hash=?").bind(await hash(token)).run();
     return json({ loggedOut: true }, 200, { "set-cookie": adminCookie("", 0) });
   });

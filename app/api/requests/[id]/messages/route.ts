@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { ApiError, CHAT_STATUSES, assertSameOrigin, idempotencyKey, stringField } from "@/lib/commission-validation";
 import { Message, authorizedCommission, database, emailConfigured, endpoint, json, notificationSummary, NOW, rateLimit, readJson, sendMails, serializeMessage, siteOrigin } from "@/lib/commissions";
+import { addActivity } from "@/lib/project-state";
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
 
@@ -45,6 +46,7 @@ export async function POST(request: Request, context: Context) {
       }
       throw error;
     }
+    await addActivity(commission, `${who.role === "admin" ? "Admin" : "Client"} sent a message`);
     return json({ message: { id: messageId, sender: who.role, body, createdAt: now }, email: await sendMails([mailId]) }, 201);
   });
 }
