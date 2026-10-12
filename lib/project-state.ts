@@ -71,3 +71,4 @@ export async function addActivity(commission: Commission, text: string): Promise
     if (result.meta.changes) return;
   }
 }
+

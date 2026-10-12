@@ -33,3 +33,4 @@ export async function DELETE(request: Request) {
     return json({ loggedOut: true }, 200, { "set-cookie": adminCookie("", 0) });
   });
 }
+

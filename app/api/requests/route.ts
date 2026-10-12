@@ -28,7 +28,20 @@ export async function GET(request: Request) {
       : await database().prepare("SELECT * FROM commission_requests ORDER BY updated_at DESC,id DESC LIMIT 201").all<Commission>();
     const rows = result.results.slice(0, 200), last = rows.at(-1);
     const nextCursor = result.results.length > 200 && last ? btoa(`${last.updated_at}|${last.id}`).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "") : null;
-    return json({ requests: rows.map(serializeCommission), nextCursor });
+    const archiveRow = await database().prepare("SELECT value FROM site_content WHERE id='admin:archived'").first<{ value: string }>();
+    const readRow = await database().prepare("SELECT value FROM site_content WHERE id='admin:reads'").first<{ value: string }>();
+    let archived: string[] = [];
+    try { archived = archiveRow ? JSON.parse(archiveRow.value) as string[] : []; } catch { archived = []; }
+    let reads: Record<string,string> = {};
+    try { reads = readRow ? JSON.parse(readRow.value) as Record<string,string> : {}; } catch { reads = {}; }
+    const [latestMessages, projectRows] = await Promise.all([
+      database().prepare("SELECT request_id,MAX(created_at) AS latest FROM messages WHERE sender='client' GROUP BY request_id").all<{request_id:string;latest:string}>(),
+      database().prepare("SELECT id,value FROM site_content WHERE id LIKE 'commission:%'").all<{id:string;value:string}>(),
+    ]);
+    const latestByRequest = new Map(latestMessages.results.map(row=>[row.request_id,row.latest]));
+    const revisions = new Map<string,number>();
+    for (const row of projectRows.results) try { const state=JSON.parse(row.value) as {revisions?:{state:string}[]}; revisions.set(row.id.slice("commission:".length),(state.revisions||[]).filter(item=>item.state==="requested").length); } catch { /* Ignore malformed project metadata and keep its badge clear. */ }
+    return json({ requests: rows.map((row) => ({ ...serializeCommission(row), archived: archived.includes(row.id), unreadMessages: (latestByRequest.get(row.id)||"") > (reads[row.id]||""), revisionCount: revisions.get(row.id)||0 })), nextCursor });
   });
 }
 
@@ -74,3 +87,4 @@ export async function POST(request: Request) {
 }
 
 export async function OPTIONS(request: Request) { return publicOptions(request, "POST"); }
+

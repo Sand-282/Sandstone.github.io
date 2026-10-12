@@ -1,5 +1,5 @@
 import { ApiError, assertSameOrigin, stringField, validTransition } from "@/lib/commission-validation";
-import { Commission, Mail, Message, StoredFile, authorizedCommission, database, emailConfigured, endpoint, json, mailStatement, NOW, readJson, requireAdmin, sendMails, serializeCommission, serializeFile, serializeMail, serializeMessage, siteOrigin } from "@/lib/commissions";
+import { Commission, Mail, Message, StoredFile, authorizedCommission, bucket, database, emailConfigured, endpoint, json, mailStatement, NOW, readJson, requireAdmin, sendMails, serializeCommission, serializeFile, serializeMail, serializeMessage, siteOrigin } from "@/lib/commissions";
 import { addActivity, getProject } from "@/lib/project-state";
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
@@ -7,14 +7,34 @@ type Context = { params: Promise<{ id: string }> };
 export async function GET(request: Request, context: Context) {
   return endpoint(async () => {
     const { id } = await context.params, { who, commission } = await authorizedCommission(request, id);
+    if (who.role === "admin") {
+      const row = await database().prepare("SELECT value FROM site_content WHERE id='admin:archived'").first<{ value: string }>();
+      let archived: string[] = []; try { archived = row ? JSON.parse(row.value) as string[] : []; } catch { archived = []; }
+      return await loadDetails(id, commission, true, archived.includes(id));
+    }
+    return await loadDetails(id, commission, false, false);
+  });
+}
+
+async function loadDetails(id: string, commission: Commission, isAdmin: boolean, archived: boolean) {
     const [messages, files, notifications] = await Promise.all([
       database().prepare("SELECT * FROM messages WHERE request_id=? ORDER BY created_at DESC,id DESC LIMIT 501").bind(id).all<Message>(),
       database().prepare("SELECT * FROM files WHERE request_id=? ORDER BY created_at ASC").bind(id).all<StoredFile>(),
-      who.role === "admin" ? database().prepare("SELECT * FROM email_outbox WHERE request_id=? ORDER BY created_at DESC LIMIT 100").bind(id).all<Mail>() : null,
+      isAdmin ? database().prepare("SELECT * FROM email_outbox WHERE request_id=? ORDER BY created_at DESC LIMIT 100").bind(id).all<Mail>() : null,
     ]);
     const project = (await getProject(commission)).state;
-    return json({ request: serializeCommission(commission), project, messages: messages.results.slice(0, 500).reverse().map(serializeMessage), hasOlderMessages: messages.results.length > 500, files: files.results.map(serializeFile), ...(notifications ? { notifications: notifications.results.map(serializeMail) } : {}) });
-  });
+    if (isAdmin) {
+      const latestClientMessage = messages.results.find(message => message.sender === "client");
+      if (latestClientMessage) {
+        const row = await database().prepare("SELECT value FROM site_content WHERE id='admin:reads'").first<{value:string}>();
+        let reads: Record<string,string> = {}; try { reads = row ? JSON.parse(row.value) as Record<string,string> : {}; } catch { reads = {}; }
+        if ((reads[id]||"") < latestClientMessage.created_at) {
+          reads[id] = latestClientMessage.created_at;
+          await database().prepare("INSERT INTO site_content(id,value,updated_at) VALUES('admin:reads',?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(JSON.stringify(reads),NOW()).run();
+        }
+      }
+    }
+    return json({ request: { ...serializeCommission(commission), archived }, project, messages: messages.results.slice(0, 500).reverse().map(serializeMessage), hasOlderMessages: messages.results.length > 500, files: files.results.map(serializeFile), ...(notifications ? { notifications: notifications.results.map(serializeMail) } : {}) });
 }
 
 export async function PATCH(request: Request, context: Context) {
@@ -45,7 +65,30 @@ export async function DELETE(request: Request, context: Context) {
     assertSameOrigin(request); await requireAdmin(request);
     const { id } = await context.params;
     await authorizedCommission(request, id);
-    await database().prepare("UPDATE access_tokens SET revoked=1 WHERE request_id=?").bind(id).run();
-    return json({ revoked: true, requestId: id });
+    const body = await readJson(request, 2 * 1024);
+    if (body.archived === true || body.archived === false) {
+      const { commission } = await authorizedCommission(request, id);
+      if (!["completed", "declined"].includes(commission.status)) throw new ApiError(409, "Only completed or declined projects can be archived.");
+      const row = await database().prepare("SELECT value FROM site_content WHERE id='admin:archived'").first<{ value: string }>();
+      let archived: string[] = []; try { archived = row ? JSON.parse(row.value) as string[] : []; } catch { archived = []; }
+      archived = archived.filter((item) => item !== id);
+      if (body.archived) archived.push(id);
+      await database().prepare("INSERT INTO site_content(id,value,updated_at) VALUES('admin:archived',?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(JSON.stringify(archived), NOW()).run();
+      return json({ archived: body.archived, requestId: id });
+    }
+    if (body.confirm !== true) throw new ApiError(400, "Confirm permanent deletion before continuing.");
+    const stored = await database().prepare("SELECT storage_key FROM files WHERE request_id=?").bind(id).all<{ storage_key: string }>();
+    if (stored.results.length) await bucket().delete(stored.results.map((file) => file.storage_key));
+    await database().batch([
+      database().prepare("DELETE FROM client_sessions WHERE request_id=?").bind(id),
+      database().prepare("DELETE FROM access_tokens WHERE request_id=?").bind(id),
+      database().prepare("DELETE FROM messages WHERE request_id=?").bind(id),
+      database().prepare("DELETE FROM email_outbox WHERE request_id=?").bind(id),
+      database().prepare("DELETE FROM files WHERE request_id=?").bind(id),
+      database().prepare("DELETE FROM site_content WHERE id=?").bind(`commission:${id}`),
+      database().prepare("DELETE FROM commission_requests WHERE id=?").bind(id),
+    ]);
+    return json({ deleted: true, requestId: id });
   });
 }
+

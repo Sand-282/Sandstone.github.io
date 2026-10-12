@@ -38,3 +38,4 @@ export async function storeUploads(uploads: Upload[]) {
 }
 
 export const uploadStatement = (upload: Upload, requestId: string | null) => database().prepare("INSERT INTO files(id,request_id,storage_key,name,mime,size,public,created_at) VALUES(?,?,?,?,?,?,?,?)").bind(upload.id, requestId, upload.storageKey, upload.name, upload.mime, upload.file.size, requestId ? 0 : 1, NOW());
+

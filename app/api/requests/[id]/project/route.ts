@@ -16,3 +16,4 @@ export async function PATCH(request: Request, context: Context) {
     return json({ project });
   });
 }
+

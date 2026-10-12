@@ -286,7 +286,7 @@ export function notificationSummary(results: { id: string; state: string; error?
 export const defaultSite = {
   brand: "sandstone", intro: "Custom Minecraft Bedrock scripting & behaviour. Thoughtful mechanics, built around your world.",
   availability: "Open for commissions", projects: [] as { id: string; title: string; category: string; description: string; image: string; accent?: string }[],
-  boxes: [1, 2, 3].map(() => ({ title: "", text: "", media: "", mediaType: "image" as "image" | "video" })),
+  boxes: [1, 2, 3].map(() => ({ title: "", text: "", media: "", mediaType: "image" as const, alt: "" })),
 };
 
 export async function getSite() {

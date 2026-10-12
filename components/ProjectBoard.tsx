@@ -82,3 +82,4 @@ export default function ProjectBoard({ id, status, role, project, files, onRefre
     <section className="project-activity"><button type="button" className="project-activity-toggle" aria-expanded={logOpen} onClick={() => setLogOpen(!logOpen)}><ListChecks size={16} /> Activity log <ChevronDown size={15} className={logOpen ? "open" : ""} /></button>{logOpen && <div><button type="button" className="project-text-button" onClick={() => void onRefresh()}><RefreshCw size={13} /> Refresh</button><ul>{project.activity.map((item) => <li key={item.id}><span>{item.text}</span><time dateTime={item.at}>{new Date(item.at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</time></li>)}</ul></div>}</section>
   </div>;
 }
+

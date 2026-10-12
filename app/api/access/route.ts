@@ -25,3 +25,4 @@ export async function DELETE(request: Request) {
     return json({ loggedOut: true }, 200, { "set-cookie": cookie(request, "", 0) });
   });
 }
+

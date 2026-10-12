@@ -50,3 +50,4 @@ export async function POST(request: Request, context: Context) {
     return json({ message: { id: messageId, sender: who.role, body, createdAt: now }, email: await sendMails([mailId]) }, 201);
   });
 }
+

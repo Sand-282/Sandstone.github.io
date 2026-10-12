@@ -23,3 +23,4 @@ export async function POST(request: Request, context: Context) {
     return json({ files: uploads.map((item) => serializeFile({ id: item.id, request_id: id, storage_key: item.storageKey, name: item.name, mime: item.mime, size: item.file.size, public: 0, created_at: new Date().toISOString() })) }, 201);
   });
 }
+

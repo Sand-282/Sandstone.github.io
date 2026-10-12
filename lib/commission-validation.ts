@@ -74,3 +74,4 @@ export function validTransition(before: string, after: string): boolean {
   if (before === after) return true;
   return ({ pending: ["accepted", "declined"], accepted: ["active", "completed"], active: ["completed"], completed: [], declined: [] } as Record<string, string[]>)[before]?.includes(after) ?? false;
 }
+

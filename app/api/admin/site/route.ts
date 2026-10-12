@@ -31,6 +31,7 @@ export async function PUT(request: Request) {
       if (!entry || typeof entry !== "object") throw new ApiError(400, "A content box is invalid.");
       const box = entry as Record<string, unknown>;
       const media = stringField(box.media ?? "", "Media URL", 300);
+      const preview = stringField(box.preview ?? "", "Preview URL", 300);
       let mediaType: "image" | "video" = "image";
       if (media) {
         if (media.startsWith("/api/files/")) {
@@ -42,10 +43,12 @@ export async function PUT(request: Request) {
           mediaType = "image";
         } else throw new ApiError(400, "Choose uploaded media or a bundled website image.");
       }
-      boxes.push({ title: stringField(box.title ?? "", "Box title", 100), text: stringField(box.text ?? "", "Box text", 500), media, mediaType });
+      if (preview && !/^\/showcase\/[\w./-]+\.(png|jpg|jpeg|webp|gif)$/i.test(preview)) throw new ApiError(400, "Use a bundled showcase image for the video preview.");
+      boxes.push({ title: stringField(box.title ?? "", "Box title", 100), text: stringField(box.text ?? "", "Box text", 500), media, mediaType, alt: stringField(box.alt ?? "", "Image description", 250), preview });
     }
     const site = { brand, intro, availability, projects, boxes };
     await database().prepare("INSERT INTO site_content(id,value,updated_at) VALUES('public',?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(JSON.stringify(site), NOW()).run();
     return json({ ...site, saved: true });
   });
 }
+

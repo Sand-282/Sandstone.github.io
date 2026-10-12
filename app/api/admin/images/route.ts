@@ -14,3 +14,4 @@ export async function POST(request: Request) {
     return json({ file: { id: u.id, name: u.name, mime: u.mime, size: u.file.size, url: `/api/files/${u.id}` } }, 201);
   });
 }
+
