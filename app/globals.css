@@ -138,3 +138,12 @@
 @keyframes process-copy-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:no-preference){.process-detail p{animation:process-copy-in .25s ease both}}
 @media(prefers-reduced-motion:reduce){.process-choice,.process-progress span{transition:none}}
+@media(min-width:1000px){
+ .process-section{display:grid;grid-template-columns:minmax(220px,.58fr) minmax(0,1.8fr);column-gap:clamp(38px,6vw,82px);align-items:start}
+ .process-heading{display:block;margin:5px 0 0}
+ .process-heading .eyebrow{margin-bottom:10px}
+ .process-heading h2{max-width:235px;font-size:24px;line-height:1.25}
+ .process-switcher{max-width:none;width:100%}
+ .process-detail{grid-template-columns:74px minmax(0,1fr);min-height:100px;padding-top:22px}
+}
+1ëa¡Ò'¾‡¶*'¦Ø¨œ¸§{m%z
