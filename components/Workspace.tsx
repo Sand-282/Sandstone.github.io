@@ -222,7 +222,7 @@ export default function Workspace({ mode, onHome }: { mode: "admin" | "portal"; 
   const authorised = isAdmin ? session?.role === "admin" : session?.role === "client";
 
   return <div className={`ws-root ${typeof window !== "undefined" && new URLSearchParams(window.location.search).has("embed") ? "ws-embedded" : ""}`}>
-    <header className="ws-header"><button className="ws-brand" onClick={onHome} aria-label="Return to sandstone home"><span className="ws-brand-icon"><span /><span /><span /></span>sandstone<span className="ws-brand-divider" /> <span className="ws-header-label">{isAdmin ? "Studio workspace" : "Client workspace"}</span></button><button className="ws-back ws-btn ws-btn-quiet" onClick={onHome}><ArrowLeft size={16} /> Back to website</button></header>
+    <header className="ws-header"><button className="ws-brand" onClick={onHome} aria-label="Return to sandstone home">sandstone<span className="ws-brand-divider" /> <span className="ws-header-label">{isAdmin ? "Studio workspace" : "Client workspace"}</span></button><button className="ws-back ws-btn ws-btn-quiet" onClick={onHome}><ArrowLeft size={16} /> Back to website</button></header>
     <div className="ws-page">
       {loading ? <div className="ws-loading"><LoaderCircle className="ws-spin" size={28} /><p>Opening your workspace…</p></div> : !authorised ? <section className="ws-access">
         <div className="ws-access-illustration"><div className="ws-access-orbit" /><div className="ws-access-lock"><LockKeyhole size={35} /></div><span className="ws-access-dot ws-access-dot-one" /><span className="ws-access-dot ws-access-dot-two" /></div>
