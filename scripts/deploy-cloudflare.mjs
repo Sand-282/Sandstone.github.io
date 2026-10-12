@@ -17,8 +17,8 @@ export function readSettings(env = process.env) {
   const password = env.ADMIN_PASSWORD;
   if (!token) throw new Error('Add the CLOUDFLARE_API_TOKEN repository secret before publishing the commission system.');
   if (!/^[a-f0-9]{32}$/i.test(accountId ?? '')) throw new Error('Add a valid CLOUDFLARE_ACCOUNT_ID repository secret (the 32-character account ID).');
-  if (typeof password !== 'string' || password.trim().length < 16 || password.length > 256) {
-    throw new Error('Add ADMIN_PASSWORD as a repository secret: use a unique password of 16–256 characters.');
+  if (typeof password !== 'string' || password.trim().length < 14 || password.length > 256) {
+    throw new Error('Add ADMIN_PASSWORD as a repository secret: use a unique password of 14–256 characters.');
   }
   const adminEmail = env.ADMIN_EMAIL?.trim() || 'cjgsinclare@gmail.com';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail) || adminEmail.length > 254) throw new Error('ADMIN_EMAIL must be a valid owner email address.');
