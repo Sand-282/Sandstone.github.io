@@ -21,6 +21,8 @@ const curseforge = "https://www.curseforge.com/members/sand282/projects";
 
 function CommissionForm({ site }: { site: Site }) {
   const [files, setFiles] = useState<File[]>([]);
+  const [fileError, setFileError] = useState("");
+  const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [saved, setSaved] = useState<SavedRequest | null>(null);
@@ -30,9 +32,9 @@ function CommissionForm({ site }: { site: Site }) {
   function selectFiles(incoming: FileList | null) {
     if (!incoming) return;
     const next = [...files, ...Array.from(incoming)];
-    if (next.length > 5) { setError("You can attach up to 5 files."); return; }
-    if (next.some(file => file.size > 10 * 1024 * 1024) || next.reduce((total, file) => total + file.size, 0) > 20 * 1024 * 1024) { setError("Each file must be under 10 MB, and all files together under 20 MB."); return; }
-    setFiles(next); setError("");
+    if (next.length > 5) { setFileError("Choose up to 5 files."); return; }
+    if (next.some(file => file.size > 10 * 1024 * 1024) || next.reduce((total, file) => total + file.size, 0) > 20 * 1024 * 1024) { setFileError("Each file must be under 10 MB, with a 20 MB total limit."); return; }
+    setFiles(next); setFileError("");
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError("");
