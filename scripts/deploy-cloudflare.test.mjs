@@ -52,15 +52,25 @@ function mockTransport({ existing = false, publicBucket = false, publicRequests 
   return { transport, calls };
 }
 
-test('missing credentials and short password stop before any remote action', async () => {
+test('missing Cloudflare credentials stop before any remote action; existing admin password may stay in Cloudflare', async () => {
   let called = false;
   await assert.rejects(deploy({ env: {}, transport: () => { called = true; }, log: () => {} }), /CLOUDFLARE_API_TOKEN/);
   assert.equal(called, false);
   assert.throws(() => readSettings({ ...env, ADMIN_PASSWORD: 'too-short' }), /ADMIN_PASSWORD/);
-  assert.throws(() => readSettings({ ...env, ADMIN_PASSWORD: 'a'.repeat(13) }), /ADMIN_PASSWORD/);
-  assert.equal(readSettings({ ...env, ADMIN_PASSWORD: 'a'.repeat(14) }).password.length, 14);
+  assert.equal(readSettings({ ...env, ADMIN_PASSWORD: undefined }).password, undefined);
   assert.throws(() => readSettings({ ...env, PUBLIC_PAGES_ORIGIN: 'https://sand-282.github.io/Sandstone.github.io/' }), /without a path/);
   assert.throws(() => readSettings({ ...env, EMAIL_FROM: 'commissions@example.test' }), /both EMAIL_FROM and RESEND_API_KEY/);
+});
+
+test('deployment without an admin password secret keeps Cloudflare credentials untouched', async () => {
+  const root = fixture();
+  const mock = mockTransport({ existing: true });
+  const commands = [];
+  try {
+    await deploy({ env: { ...env, ADMIN_PASSWORD: undefined }, root, transport: mock.transport, runner: async (args, options) => commands.push({ args, options }), log: () => {} });
+    assert.deepEqual(commands.map(command => command.args[0]), ['d1', 'deploy']);
+    assert.ok(commands.every(command => !JSON.stringify(command).includes('ADMIN_PASSWORD')));
+  } finally { removeFixture(root); }
 });
 
 test('first deployment uses real resource IDs and installs secrets before code', async () => {

@@ -7,7 +7,6 @@ export const ROOT = fileURLToPath(new URL('../', import.meta.url));
 export const WORKER_NAME = 'sandstone-commissions';
 export const DATABASE_NAME = 'sandstone-commissions-db';
 export const BUCKET_NAME = 'sandstone-commissions-uploads';
-export const GMAIL_BRIDGE_URL = 'https://script.google.com/macros/s/AKfycby5D5hzA9zQASCYQequPhgaRfTnQh9LFg3fSu68pezLMj-7YVQVjcM5_CVg8i5C3-1k6g/exec';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PLACEHOLDER_UUID = '00000000-0000-4000-8000-000000000000';
 
@@ -17,8 +16,8 @@ export function readSettings(env = process.env) {
   const password = env.ADMIN_PASSWORD;
   if (!token) throw new Error('Add the CLOUDFLARE_API_TOKEN repository secret before publishing the commission system.');
   if (!/^[a-f0-9]{32}$/i.test(accountId ?? '')) throw new Error('Add a valid CLOUDFLARE_ACCOUNT_ID repository secret (the 32-character account ID).');
-  if (typeof password !== 'string' || password.trim().length < 14 || password.length > 256) {
-    throw new Error('Add ADMIN_PASSWORD as a repository secret: use a unique password of 14–256 characters.');
+  if (password !== undefined && password !== '' && (typeof password !== 'string' || password.trim().length < 16 || password.length > 256)) {
+    throw new Error('If supplied, ADMIN_PASSWORD must be 16–256 characters.');
   }
   const adminEmail = env.ADMIN_EMAIL?.trim() || 'cjgsinclare@gmail.com';
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail) || adminEmail.length > 254) throw new Error('ADMIN_EMAIL must be a valid owner email address.');
@@ -102,7 +101,6 @@ export function prepareConfig(settings, resources, root = ROOT) {
     PAGES_ORIGIN: settings.pagesOrigin,
     SITE_URL: resources.siteUrl,
     EMAIL_FROM: settings.emailFrom,
-    GMAIL_BRIDGE_URL,
   };
   config.d1_databases = [{ binding: 'DB', database_name: DATABASE_NAME, database_id: resources.databaseId, migrations_dir: '../../drizzle' }];
   config.r2_buckets = []; // Free D1 attachment storage requires no R2 subscription.
@@ -149,10 +147,14 @@ export async function deploy({ env = process.env, transport = fetch, runner = ru
   log('Checking Cloudflare account and reusing or creating commission storage.');
   const resources = await provisionResources(api);
   const configPath = prepareConfig(settings, resources, root);
-  const secrets = { ADMIN_PASSWORD: settings.password, ...(settings.resendKey ? { RESEND_API_KEY: settings.resendKey } : {}) };
-  log('Installing owner credentials before publishing application code.');
-  // stdin avoids command-line arguments, temporary files, and secret-bearing logs.
-  await runner(['secret', 'bulk', '--config', configPath], { settings, input: `${JSON.stringify(secrets)}\n`, quiet: true, root });
+  const secrets = { ...(settings.password ? { ADMIN_PASSWORD: settings.password } : {}), ...(settings.resendKey ? { RESEND_API_KEY: settings.resendKey } : {}) };
+  if (Object.keys(secrets).length) {
+    log('Updating configured secrets before publishing application code.');
+    // stdin avoids command-line arguments, temporary files, and secret-bearing logs.
+    await runner(['secret', 'bulk', '--config', configPath], { settings, input: `${JSON.stringify(secrets)}\n`, quiet: true, root });
+  } else {
+    log('Keeping the existing Cloudflare admin password and other secrets.');
+  }
   log('Applying pending database migrations.');
   await runner(['d1', 'migrations', 'apply', 'DB', '--remote', '--config', configPath], { settings, root });
   log('Publishing the secured application.');

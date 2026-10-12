@@ -32,7 +32,6 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
           ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL || 'cjgsinclare@gmail.com' }}
           EMAIL_FROM: ${{ vars.EMAIL_FROM }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
@@ -48,8 +47,8 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
           ADMIN_EMAIL: ${{ vars.ADMIN_EMAIL || 'cjgsinclare@gmail.com' }}
           EMAIL_FROM: ${{ vars.EMAIL_FROM }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           PUBLIC_PAGES_ORIGIN: https://sand-282.github.io
+
