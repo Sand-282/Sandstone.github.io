@@ -57,6 +57,8 @@ test('missing credentials and short password stop before any remote action', asy
   await assert.rejects(deploy({ env: {}, transport: () => { called = true; }, log: () => {} }), /CLOUDFLARE_API_TOKEN/);
   assert.equal(called, false);
   assert.throws(() => readSettings({ ...env, ADMIN_PASSWORD: 'too-short' }), /ADMIN_PASSWORD/);
+  assert.throws(() => readSettings({ ...env, ADMIN_PASSWORD: 'a'.repeat(13) }), /ADMIN_PASSWORD/);
+  assert.equal(readSettings({ ...env, ADMIN_PASSWORD: 'a'.repeat(14) }).password.length, 14);
   assert.throws(() => readSettings({ ...env, PUBLIC_PAGES_ORIGIN: 'https://sand-282.github.io/Sandstone.github.io/' }), /without a path/);
   assert.throws(() => readSettings({ ...env, EMAIL_FROM: 'commissions@example.test' }), /both EMAIL_FROM and RESEND_API_KEY/);
 });
@@ -134,3 +136,4 @@ test('API failure messages omit echoed credentials and response data', async () 
     return true;
   });
 });
+
