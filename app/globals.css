@@ -152,3 +152,11 @@
 .visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 @keyframes type-caret-blink{to{visibility:hidden}}
 @media(prefers-reduced-motion:reduce){.hero-copy h1 .type-caret{display:none}}
+
+/* Sandstone custom page scrollbar */
+:root{scrollbar-color:#f27b42 #0d0d0d;scrollbar-width:thin}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:#0d0d0d}
+::-webkit-scrollbar-thumb{min-height:36px;border:2px solid #0d0d0d;border-radius:999px;background:#70442f}
+::-webkit-scrollbar-thumb:hover{background:#f27b42}
+::-webkit-scrollbar-corner{background:#0d0d0d}
