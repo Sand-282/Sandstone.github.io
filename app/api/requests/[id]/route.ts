@@ -1,5 +1,6 @@
 import { ApiError, assertSameOrigin, stringField, validTransition } from "@/lib/commission-validation";
 import { Commission, Mail, Message, StoredFile, authorizedCommission, database, emailConfigured, endpoint, json, mailStatement, NOW, readJson, requireAdmin, sendMails, serializeCommission, serializeFile, serializeMail, serializeMessage, siteOrigin } from "@/lib/commissions";
+import { addActivity, getProject } from "@/lib/project-state";
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
 
@@ -11,7 +12,8 @@ export async function GET(request: Request, context: Context) {
       database().prepare("SELECT * FROM files WHERE request_id=? ORDER BY created_at ASC").bind(id).all<StoredFile>(),
       who.role === "admin" ? database().prepare("SELECT * FROM email_outbox WHERE request_id=? ORDER BY created_at DESC LIMIT 100").bind(id).all<Mail>() : null,
     ]);
-    return json({ request: serializeCommission(commission), messages: messages.results.slice(0, 500).reverse().map(serializeMessage), hasOlderMessages: messages.results.length > 500, files: files.results.map(serializeFile), ...(notifications ? { notifications: notifications.results.map(serializeMail) } : {}) });
+    const project = (await getProject(commission)).state;
+    return json({ request: serializeCommission(commission), project, messages: messages.results.slice(0, 500).reverse().map(serializeMessage), hasOlderMessages: messages.results.length > 500, files: files.results.map(serializeFile), ...(notifications ? { notifications: notifications.results.map(serializeMail) } : {}) });
   });
 }
 
@@ -33,6 +35,7 @@ export async function PATCH(request: Request, context: Context) {
     const result = await database().batch([change, notification]);
     if (!result[0].meta.changes) throw new ApiError(409, "This request changed while you were reviewing it. Refresh and try again.");
     const saved = await database().prepare("SELECT * FROM commission_requests WHERE id=?").bind(id).first<Commission>();
+    await addActivity(saved!, changedStatus ? `Admin changed project status to ${status}` : "Admin updated the project note");
     return json({ request: serializeCommission(saved!), email: await sendMails([mail.id]) });
   });
 }

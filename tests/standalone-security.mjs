@@ -51,7 +51,7 @@ async function moduleUrl(path) {
   if (urls.has(path)) return urls.get(path);
   let source = ts.transpileModule(await readFile(new URL(`../${path}`, import.meta.url), 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } }).outputText;
   source = source.replace(/import\s*\{\s*env\s*\}\s*from\s*["']cloudflare:workers["'];/, 'const env = globalThis.__standaloneSecurityEnv;');
-  for (const [specifier, target] of [['./commission-validation', 'lib/commission-validation.ts'], ['./commission-storage', 'lib/commission-storage.ts'], ['./commissions', 'lib/commissions.ts'], ['@/lib/commission-validation', 'lib/commission-validation.ts'], ['@/lib/commissions', 'lib/commissions.ts'], ['@/lib/commission-files', 'lib/commission-files.ts']]) {
+  for (const [specifier, target] of [['./commission-validation', 'lib/commission-validation.ts'], ['./commission-storage', 'lib/commission-storage.ts'], ['./commissions', 'lib/commissions.ts'], ['@/lib/commission-validation', 'lib/commission-validation.ts'], ['@/lib/commissions', 'lib/commissions.ts'], ['@/lib/commission-files', 'lib/commission-files.ts'], ['@/lib/project-state', 'lib/project-state.ts']]) {
     if (source.includes(`"${specifier}"`) || source.includes(`'${specifier}'`)) source = source.replaceAll(`"${specifier}"`, JSON.stringify(await moduleUrl(target))).replaceAll(`'${specifier}'`, JSON.stringify(await moduleUrl(target)));
   }
   const url = `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
@@ -65,6 +65,8 @@ const site = await import(await moduleUrl('app/api/site/route.ts'));
 const access = await import(await moduleUrl('app/api/access/route.ts'));
 const detail = await import(await moduleUrl('app/api/requests/[id]/route.ts'));
 const messages = await import(await moduleUrl('app/api/requests/[id]/messages/route.ts'));
+const project = await import(await moduleUrl('app/api/requests/[id]/project/route.ts'));
+const projectFiles = await import(await moduleUrl('app/api/requests/[id]/files/route.ts'));
 const files = await import(await moduleUrl('app/api/files/[id]/route.ts'));
 const content = await import(await moduleUrl('app/api/admin/site/route.ts'));
 const ownerHeaders = { 'oai-authenticated-user-id': 'forged-owner', 'oai-authenticated-user-email': testEnv.ADMIN_EMAIL };
@@ -121,7 +123,7 @@ try {
   });
   await check('Successful login stores only a random token hash with 12-hour expiry', async () => {
     const response = await auth.POST(request('/api/admin/auth', { method: 'POST', body: { email: ' OWNER@example.test ', password } }));
-    assert.equal(response.status, 200); assert.deepEqual(await response.json(), { loggedIn: true });
+    assert.equal(response.status, 200); assert.match((await response.clone().json()).sessionToken, /^[\w-]{43}$/);
     assert.match(response.headers.get('set-cookie'), /Path=\/; HttpOnly; Secure; SameSite=Lax; Max-Age=43200/);
     ownerCookie = cookiePair(response);
     const token = ownerCookie.split('=')[1], row = sql.prepare('SELECT * FROM admin_sessions').get();
@@ -149,7 +151,7 @@ try {
     const response = await requests.POST(request('/api/requests', { method: 'POST', requestOrigin: pages, headers: { 'sec-fetch-site': 'cross-site' }, form: submission(undefined, true) }));
     assert.equal(response.status, 201, await response.clone().text()); assert.equal(response.headers.get('access-control-allow-origin'), pages);
     assert.equal(response.headers.get('set-cookie'), null); assert.equal(response.headers.get('access-control-allow-credentials'), null);
-    first = await response.json(); assert.match(first.portalUrl, new RegExp(`^${origin}/portal#access=[\\w-]{43}$`));
+    first = await response.json(); assert.match(first.portalUrl, /^https:\/\/sand-282\.github\.io\/Sandstone\.github\.io\/\?view=portal#access=[\w-]{43}$/);
     assert.equal(first.email.state, 'unconfigured');
     const receipt = sql.prepare("SELECT body FROM email_outbox WHERE request_id=? AND kind='request-client'").get(first.request.id);
     assert.ok(receipt.body.includes(first.portalUrl)); assert.ok(!receipt.body.includes(origin + origin));
@@ -193,6 +195,30 @@ try {
     assert.deepEqual(new Set(data.messages.map((item) => item.sender)), new Set(['client', 'admin']));
     const privateRead = await requests.GET(request('/api/requests', { cookie: ownerCookie, headers: { origin: pages } }));
     assert.equal(privateRead.headers.get('access-control-allow-origin'), null);
+  });
+  await check('Private project plan records progress and revisions with role checks', async () => {
+    const id = first.request.id, path = `/api/requests/${id}/project`;
+    const clientBearer = clientCookie.split('=')[1], ownerBearer = ownerCookie.split('=')[1];
+    assert.equal((await project.PATCH(request(path, { method: 'PATCH', body: { action: 'add_feature', text: 'Movement system' } }), context(id))).status, 404);
+    const added = await project.PATCH(request(path, { method: 'PATCH', headers: { authorization: `Bearer ${clientBearer}` }, body: { action: 'add_feature', text: 'Movement system' } }), context(id));
+    assert.equal(added.status, 200, await added.clone().text());
+    const feature = (await added.json()).project.features[0];
+    assert.equal((await project.PATCH(request(path, { method: 'PATCH', cookie: clientCookie, body: { action: 'feature_state', id: feature.id, state: 'complete' } }), context(id))).status, 403);
+    assert.equal((await project.PATCH(request(path, { method: 'PATCH', headers: { authorization: `Bearer ${ownerBearer}` }, body: { action: 'feature_state', id: feature.id, state: 'complete' } }), context(id))).status, 200);
+    assert.equal((await project.PATCH(request(path, { method: 'PATCH', cookie: clientCookie, body: { action: 'revision', text: 'Please adjust movement speed' } }), context(id))).status, 200);
+    const data = await asJson(await detail.GET(request(`/api/requests/${id}`, { cookie: clientCookie }), context(id)));
+    assert.equal(data.project.features[0].state, 'complete'); assert.equal(data.project.revisions[0].state, 'requested');
+    assert.ok(data.project.activity.some((item) => item.text === 'Admin marked Movement system as complete'));
+    assert.equal((await detail.GET(request(`/api/requests/${second.request.id}`, { headers: { authorization: `Bearer ${clientBearer}` } }), context(second.request.id))).status, 404);
+  });
+  await check('Clients can add private references after submission', async () => {
+    const id = first.request.id, form = new FormData(); form.append('files', new Blob(['Revision reference']), 'revision.txt');
+    const response = await projectFiles.POST(request(`/api/requests/${id}/files`, { method: 'POST', cookie: clientCookie, form }), context(id));
+    assert.equal(response.status, 201, await response.clone().text());
+    const data = await response.json();
+    assert.equal(data.files.length, 1);
+    assert.equal((await files.GET(request(data.files[0].url), context(data.files[0].id))).status, 404);
+    assert.equal((await files.GET(request(data.files[0].url, { cookie: clientCookie }), context(data.files[0].id))).status, 200);
   });
   await check('Expiry and owner changes invalidate saved admin cookies', async () => {
     testEnv.ADMIN_EMAIL = 'new-owner@example.test';

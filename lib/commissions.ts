@@ -143,6 +143,7 @@ export async function ownerPasswordMatches(email: unknown, password: unknown): P
 }
 
 export async function identity(request: Request): Promise<Identity> {
+  const bearer = request.headers.get("authorization")?.match(/^Bearer ([A-Za-z0-9_-]{43})$/)?.[1];
   if (authMode() === "sites") {
     // Sites dispatch strips untrusted identity headers and injects authenticated ones.
     const id = request.headers.get("oai-authenticated-user-id");
@@ -150,14 +151,14 @@ export async function identity(request: Request): Promise<Identity> {
     if (id && email && env.ADMIN_EMAIL?.trim().toLowerCase() === email) return { role: "admin" };
   } else {
     // A public Worker has no trusted Sites gateway. Never use its identity headers.
-    const adminToken = cookieToken(request, ADMIN_COOKIE);
+    const adminToken = bearer || cookieToken(request, ADMIN_COOKIE);
     if (adminToken && env.DB && adminConfigured()) {
       const digest = await hash(adminToken);
       const row = await database().prepare("SELECT expires_at FROM admin_sessions WHERE hash=? AND owner_email=? AND expires_at>?").bind(digest, env.ADMIN_EMAIL!.trim().toLowerCase(), NOW()).first<{ expires_at: string }>();
       if (row) return { role: "admin", adminSessionHash: digest, expiresAt: row.expires_at };
     }
   }
-  const raw = cookieToken(request, COOKIE);
+  const raw = bearer || cookieToken(request, COOKIE);
   if (!raw || !env.DB) return { role: "anonymous" };
   const digest = await hash(raw);
   const row = await database().prepare("SELECT s.request_id, s.expires_at FROM client_sessions s JOIN access_tokens t ON t.hash=s.token_hash WHERE s.hash=? AND s.expires_at>? AND t.expires_at>? AND t.revoked=0").bind(digest, NOW(), NOW()).first<{ request_id: string; expires_at: string }>();
@@ -193,7 +194,9 @@ export function cookie(request: Request, token: string, maxAge = 30 * 24 * 60 * 
 export async function makeAccess(requestId: string, request: Request) {
   const token = randomToken(), tokenHash = await hash(token), sessionToken = randomToken(), sessionHash = await hash(sessionToken);
   const now = NOW(), expiresAt = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(), sessionExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-  const portalUrl = `${authMode() === "standalone" ? siteOrigin(request) : ""}/portal#access=${token}`;
+  const portalUrl = authMode() === "standalone" && pagesOrigin()
+    ? `${pagesOrigin()}/Sandstone.github.io/?view=portal#access=${token}`
+    : `${authMode() === "standalone" ? siteOrigin(request) : ""}/portal#access=${token}`;
   return { token, tokenHash, portalUrl, cookie: cookie(request, sessionToken), statements: [
     database().prepare("INSERT INTO access_tokens(hash,request_id,expires_at,created_at) VALUES(?,?,?,?)").bind(tokenHash, requestId, expiresAt, now),
     database().prepare("INSERT INTO client_sessions(hash,token_hash,request_id,expires_at,created_at) VALUES(?,?,?,?,?)").bind(sessionHash, tokenHash, requestId, sessionExpiresAt, now),
@@ -272,12 +275,15 @@ export function notificationSummary(results: { id: string; state: string; error?
 export const defaultSite = {
   brand: "sandstone", intro: "Custom Minecraft Bedrock scripting & behaviour. Thoughtful mechanics, built around your world.",
   availability: "Open for commissions", projects: [] as { id: string; title: string; category: string; description: string; image: string; accent?: string }[],
+  boxes: [1, 2, 3].map(() => ({ title: "", text: "", media: "", mediaType: "image" as "image" | "video" })),
 };
 
 export async function getSite() {
   if (!env.DB) return defaultSite;
   const row = await database().prepare("SELECT value FROM site_content WHERE id='public'").first<{ value: string }>();
-  return row ? JSON.parse(row.value) as typeof defaultSite : defaultSite;
+  if (!row) return defaultSite;
+  const saved = JSON.parse(row.value) as Partial<typeof defaultSite>;
+  return { ...defaultSite, ...saved, boxes: Array.isArray(saved.boxes) && saved.boxes.length === 3 ? saved.boxes : defaultSite.boxes };
 }
 
 export function validateRequestFields(form: FormData) {

@@ -52,7 +52,9 @@ export function detectMime(name: string, data: Uint8Array, publicImage = false):
   if (["jpg", "jpeg"].includes(ext) && starts(255, 216, 255)) return "image/jpeg";
   if (ext === "gif" && (ascii(0, "GIF87a") || ascii(0, "GIF89a"))) return "image/gif";
   if (ext === "webp" && ascii(0, "RIFF") && ascii(8, "WEBP")) return "image/webp";
-  if (publicImage) throw new ApiError(400, "Upload a PNG, JPEG, GIF or WebP image. SVG images are not supported.");
+  if (publicImage && ext === "mp4" && ascii(4, "ftyp")) return "video/mp4";
+  if (publicImage && ext === "webm" && starts(26, 69, 223, 163)) return "video/webm";
+  if (publicImage) throw new ApiError(400, "Upload a PNG, JPEG, GIF, WebP, MP4 or WebM file. SVG images are not supported.");
   if (ext === "pdf" && ascii(0, "%PDF-")) return "application/pdf";
   if (["zip", "mcpack", "mcaddon"].includes(ext) && (starts(80, 75, 3, 4) || starts(80, 75, 5, 6) || starts(80, 75, 7, 8))) return "application/zip";
   if (["txt", "json"].includes(ext)) {

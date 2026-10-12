@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     if (!found) throw new ApiError(401, "This private link has expired or been revoked. Recover access using your email.");
     const session = randomToken(), expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     await database().prepare("INSERT INTO client_sessions(hash,token_hash,request_id,expires_at,created_at) VALUES(?,?,?,?,?)").bind(await hash(session), tokenHash, found.request_id, expiresAt, NOW()).run();
-    return json({ requestId: found.request_id, expiresAt }, 200, { "set-cookie": cookie(request, session) });
+    return json({ requestId: found.request_id, expiresAt, sessionToken: session }, 200, { "set-cookie": cookie(request, session) });
   });
 }
 

@@ -10,7 +10,8 @@ export async function validateUploads(values: FormDataEntryValue[], publicImages
   if (files.length) bucket();
   const uploads: Upload[] = [];
   for (const file of files) {
-    if (file.size > (publicImages ? 8 * 1024 * 1024 : MAX_FILE_BYTES)) throw new ApiError(413, publicImages ? "Images must be smaller than 8 MB." : "Each attachment must be smaller than 10 MB.");
+    const publicLimit = /\.(mp4|webm)$/i.test(file.name) ? 20 * 1024 * 1024 : 8 * 1024 * 1024;
+    if (file.size > (publicImages ? publicLimit : MAX_FILE_BYTES)) throw new ApiError(413, publicImages ? "Images must be under 8 MB and videos under 20 MB." : "Each attachment must be smaller than 10 MB.");
     const name = safeFilename(file.name);
     const content = await file.arrayBuffer();
     const bytes = new Uint8Array(content);

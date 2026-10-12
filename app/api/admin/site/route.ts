@@ -25,7 +25,26 @@ export async function PUT(request: Request) {
       const accent = stringField(p.accent ?? "green", "Accent", 30);
       projects.push({ id, title: stringField(p.title, "Project title", 100, 2), category: stringField(p.category ?? "Scripting", "Category", 60, 2), description: stringField(p.description ?? "", "Project description", 500), image, accent });
     }
-    const site = { brand, intro, availability, projects };
+    if (!Array.isArray(input.boxes) || input.boxes.length !== 3) throw new ApiError(400, "The website needs exactly three content boxes.");
+    const boxes = [];
+    for (const entry of input.boxes) {
+      if (!entry || typeof entry !== "object") throw new ApiError(400, "A content box is invalid.");
+      const box = entry as Record<string, unknown>;
+      const media = stringField(box.media ?? "", "Media URL", 300);
+      let mediaType: "image" | "video" = "image";
+      if (media) {
+        if (media.startsWith("/api/files/")) {
+          const fileId = media.slice("/api/files/".length);
+          const file = await database().prepare("SELECT mime FROM files WHERE id=? AND public=1").bind(fileId).first<{ mime: string }>();
+          if (!file || (!file.mime.startsWith("image/") && !file.mime.startsWith("video/"))) throw new ApiError(400, "Choose media uploaded through the admin panel.");
+          mediaType = file.mime.startsWith("video/") ? "video" : "image";
+        } else if (/^\/images\/[\w./-]+\.(png|jpg|jpeg|webp|gif)$/i.test(media) && !media.includes("..")) {
+          mediaType = "image";
+        } else throw new ApiError(400, "Choose uploaded media or a bundled website image.");
+      }
+      boxes.push({ title: stringField(box.title ?? "", "Box title", 100), text: stringField(box.text ?? "", "Box text", 500), media, mediaType });
+    }
+    const site = { brand, intro, availability, projects, boxes };
     await database().prepare("INSERT INTO site_content(id,value,updated_at) VALUES('public',?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(JSON.stringify(site), NOW()).run();
     return json({ ...site, saved: true });
   });
