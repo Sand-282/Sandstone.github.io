@@ -7,11 +7,11 @@ export async function POST(request: Request) {
   return endpoint(async () => {
     assertSameOrigin(request);
     if (authMode() !== "standalone") throw new ApiError(404, "This sign-in method is not available.");
-    await rateLimit(request, "admin-login", 5, 15 * 60);
     const input = await readJson(request, 8 * 1024);
     if (!adminConfigured()) throw new ApiError(503, "Owner sign-in has not been configured yet.");
     const matches = await ownerPasswordMatches(input.email, input.password);
     if (!matches || typeof input.password !== "string" || new TextEncoder().encode(input.password).length > 1024) {
+      await rateLimit(request, "admin-login", 5, 15 * 60);
       throw new ApiError(401, "The email or password is incorrect.");
     }
     const token = randomToken(), expiresAt = new Date(Date.now() + ADMIN_SESSION_SECONDS * 1000).toISOString();
@@ -33,4 +33,5 @@ export async function DELETE(request: Request) {
     return json({ loggedOut: true }, 200, { "set-cookie": adminCookie("", 0) });
   });
 }
+
 

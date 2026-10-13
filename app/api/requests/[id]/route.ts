@@ -1,5 +1,5 @@
 import { ApiError, assertSameOrigin, stringField, validTransition } from "@/lib/commission-validation";
-import { Commission, Mail, Message, StoredFile, authorizedCommission, bucket, database, emailConfigured, endpoint, json, mailStatement, NOW, readJson, requireAdmin, sendMails, serializeCommission, serializeFile, serializeMail, serializeMessage, siteOrigin } from "@/lib/commissions";
+import { Commission, CommissionReview, Mail, Message, StoredFile, authorizedCommission, bucket, database, emailConfigured, endpoint, json, mailStatement, NOW, readJson, requireAdmin, sendMails, serializeCommission, serializeFile, serializeMail, serializeMessage, serializeReview, siteOrigin } from "@/lib/commissions";
 import { addActivity, getProject } from "@/lib/project-state";
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
@@ -17,10 +17,11 @@ export async function GET(request: Request, context: Context) {
 }
 
 async function loadDetails(id: string, commission: Commission, isAdmin: boolean, archived: boolean) {
-    const [messages, files, notifications] = await Promise.all([
+    const [messages, files, notifications, review] = await Promise.all([
       database().prepare("SELECT * FROM messages WHERE request_id=? ORDER BY created_at DESC,id DESC LIMIT 501").bind(id).all<Message>(),
       database().prepare("SELECT * FROM files WHERE request_id=? ORDER BY created_at ASC").bind(id).all<StoredFile>(),
       isAdmin ? database().prepare("SELECT * FROM email_outbox WHERE request_id=? ORDER BY created_at DESC LIMIT 100").bind(id).all<Mail>() : null,
+      database().prepare("SELECT * FROM commission_reviews WHERE request_id=?").bind(id).first<CommissionReview>(),
     ]);
     const project = (await getProject(commission)).state;
     if (isAdmin) {
@@ -34,7 +35,7 @@ async function loadDetails(id: string, commission: Commission, isAdmin: boolean,
         }
       }
     }
-    return json({ request: { ...serializeCommission(commission), archived }, project, messages: messages.results.slice(0, 500).reverse().map(serializeMessage), hasOlderMessages: messages.results.length > 500, files: files.results.map(serializeFile), ...(notifications ? { notifications: notifications.results.map(serializeMail) } : {}) });
+    return json({ request: { ...serializeCommission(commission), archived }, project, review: review ? serializeReview(review) : null, messages: messages.results.slice(0, 500).reverse().map(serializeMessage), hasOlderMessages: messages.results.length > 500, files: files.results.map(serializeFile), ...(notifications ? { notifications: notifications.results.map(serializeMail) } : {}) });
 }
 
 export async function PATCH(request: Request, context: Context) {
@@ -83,6 +84,7 @@ export async function DELETE(request: Request, context: Context) {
       database().prepare("DELETE FROM client_sessions WHERE request_id=?").bind(id),
       database().prepare("DELETE FROM access_tokens WHERE request_id=?").bind(id),
       database().prepare("DELETE FROM messages WHERE request_id=?").bind(id),
+      database().prepare("DELETE FROM commission_reviews WHERE request_id=?").bind(id),
       database().prepare("DELETE FROM email_outbox WHERE request_id=?").bind(id),
       database().prepare("DELETE FROM files WHERE request_id=?").bind(id),
       database().prepare("DELETE FROM site_content WHERE id=?").bind(`commission:${id}`),

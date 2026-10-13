@@ -1,0 +1,147 @@
+.ws-project-nav {
+  display: flex;
+  gap: 4px;
+  padding: 0 28px;
+  border-bottom: 1px solid #303030;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.ws-project-nav button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 14px;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #a1a1aa;
+  white-space: nowrap;
+}
+.ws-project-nav button[aria-pressed="true"] { color: #f97316; border-bottom-color: #f97316; }
+.ws-project-nav button span {
+  border-radius: 999px;
+  padding: 1px 7px;
+  background: #2b211b;
+  color: #fdba74;
+  font-size: 10px;
+}
+.ws-status-description { margin: 0 0 12px; color: #bbb9b4; max-width: 70ch; }
+.ws-conversation { padding: 24px 28px 26px; }
+.ws-chat-heading { margin-bottom: 17px; }
+.ws-messages {
+  min-height: 220px;
+  max-height: min(54vh, 620px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 18px;
+  border: 1px solid #303030;
+  border-radius: 8px 8px 0 0;
+  background: #101010;
+  overscroll-behavior: contain;
+}
+.ws-message { max-width: min(82%, 660px); }
+.ws-message-own { align-self: flex-end; }
+.ws-message-author { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ws-message-author time { color: #858585; }
+.ws-message p { white-space: pre-wrap; overflow-wrap: anywhere; border-radius: 4px 12px 12px 12px; }
+.ws-message-own p { border-radius: 12px 4px 12px 12px; }
+.ws-message-attachments,.ws-pending-files { list-style: none; display: grid; gap: 6px; margin: 8px 0 0; padding: 0; }
+.ws-message-attachments li,.ws-pending-files li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 9px 11px;
+  background: #181818;
+  border: 1px solid #353535;
+  border-radius: 5px;
+  font-size: 12px;
+}
+.ws-message-attachments a,.ws-pending-files li { overflow-wrap: anywhere; }
+.ws-message-attachments a { text-decoration: underline!important; text-underline-offset: 3px; }
+.ws-message-attachments small { flex: none; color: #a1a1aa; }
+.ws-composer { display: block; border: 1px solid #303030; border-top: 0; border-radius: 0 0 8px 8px; }
+.ws-composer>textarea { display: block; width: 100%; min-height: 104px; padding: 15px; border: 0; border-radius: 0; background: #181818; color: #fafafa; }
+.ws-composer-tools { padding: 10px 12px; border-top: 1px solid #303030; background: #181818; }
+.ws-composer-actions { display: flex; align-items: center; gap: 12px; }
+.ws-composer-actions>span { color: #a1a1aa; font-size: 11px; margin-left: auto; }
+.ws-message-attach { position: relative; display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 8px 12px; border: 1px solid #444; border-radius: 5px; color: #fdba74; cursor: pointer; white-space: nowrap; }
+.ws-message-attach input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+.ws-pending-files { margin: 0 0 10px; }
+.ws-pending-files li { color: #e7e5e4; }
+.ws-pending-files button { display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 4px; background: transparent; color: #f97316; }
+.ws-review-panel { display: grid; gap: 16px; padding: 25px 28px; border-top: 1px solid #303030; }
+.ws-review-panel h3 { margin: 6px 0; font-size: 17px; }
+.ws-review-panel>div:first-child p { color: #a1a1aa; font-size: 13px; }
+.ws-review-form fieldset { border: 0; padding: 0; margin: 0; }
+.ws-review-form legend { padding: 0; margin-bottom: 4px; color: #d4d4d8; font-size: 12px; }
+.ws-rating-picker { display: flex; gap: 4px; margin-bottom: 13px; }
+.ws-rating-picker button { border: 0; background: transparent; color: #f97316; font-size: 30px; line-height: 1.2; padding: 2px 5px; }
+.ws-review-form .ws-field { display: grid; gap: 6px; margin-bottom: 12px; }
+.ws-review-form .ws-field span { color: #a1a1aa; }
+.ws-review-result { padding: 16px; border: 1px solid #383838; border-radius: 6px; background: #181818; }
+.ws-review-stars { color: #f97316; letter-spacing: 3px; font-size: 22px; }
+.ws-review-result p { white-space: pre-wrap; margin: 8px 0; color: #e4e4e7; }
+.ws-review-result>span { color: #a1a1aa; font-size: 12px; }
+.ws-review-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.project-activity li { align-items: flex-start; }
+.project-activity time { text-align: right; }
+.ws-root :is(.ws-review-panel,.ws-review-result,.ws-message-attachments li,.ws-pending-files li) { border-color: #333; }
+.ws-root .ws-review-panel :is(h3,legend) { color: #f2f0ed; }
+.ws-root .ws-review-panel>div:first-child p { color: #a1a1aa; }
+.ws-root .ws-review-form .ws-field { color: #d4d4d8; }
+.ws-root .ws-review-result p { color: #e4e4e7; }
+.ws-root .ws-message-attachments a { color: #fdba74; }
+.ws-root .ws-message-attachments li,.ws-root .ws-pending-files li { background: #151515; }
+@media (max-width: 800px) {
+  .ws-project-nav { padding: 0 14px; }
+  .ws-project-nav button { min-height: 46px; padding: 0 12px; font-size: 12px; }
+  .ws-conversation { padding: 19px; }
+  .ws-messages { max-height: 58vh; padding: 12px; }
+  .ws-message { max-width: 94%; }
+  .ws-composer-actions { flex-wrap: wrap; }
+  .ws-composer-actions>span { order: 3; flex-basis: 100%; margin-left: 0; }
+  .ws-composer-actions>.ws-btn { margin-left: auto; }
+  .ws-review-panel { padding: 20px 19px; }
+}
+@media (max-width: 480px) {
+  .ws-project-nav { padding: 0 8px; }
+  .ws-project-nav button { gap: 5px; padding: 0 9px; font-size: 11px; }
+  .ws-conversation { padding: 15px 12px; }
+  .ws-messages { min-height: 190px; }
+  .ws-composer-actions { gap: 7px; }
+  .ws-message-attach { padding: 7px 9px; }
+}
+
+@media (prefers-color-scheme: light) {
+  .ws-project-nav { border-color: #e2ded8; }
+  .ws-project-nav button { color: #6e6962; }
+  .ws-project-nav button[aria-pressed="true"] { color: #b94b20; border-bottom-color: #c85123; }
+  .ws-project-nav button span { background: #f7e7de; color: #8d3819; }
+  .ws-status-description { color: #625d57; }
+  .ws-messages { border-color: #e2ded8; background: #f8f7f5; }
+  .ws-message-author time { color: #77716a; }
+  .ws-message-attachments li, .ws-pending-files li { background: #fff; border-color: #e2ded8; color: #292622; }
+  .ws-message-attachments small { color: #6e6962; }
+  .ws-composer { border-color: #e2ded8; }
+  .ws-composer > textarea, .ws-composer-tools { background: #fff; color: #211f1c; }
+  .ws-composer-tools { border-color: #e2ded8; }
+  .ws-composer-actions > span { color: #6e6962; }
+  .ws-message-attach { border-color: #d8d3cc; color: #a74620; }
+  .ws-message-attach input:focus-visible + span { outline-color: #c85123; }
+  .ws-review-panel { border-color: #e2ded8; }
+  .ws-review-panel h3 { color: #211f1c; }
+  .ws-review-panel > div:first-child p { color: #6e6962; }
+  .ws-review-form legend, .ws-review-form .ws-field { color: #393530; }
+  .ws-review-form .ws-field span { color: #6e6962; }
+  .ws-review-result { border-color: #e2ded8; background: #fff; }
+  .ws-review-result p { color: #393530; }
+  .ws-review-result > span { color: #6e6962; }
+  .ws-root .ws-composer textarea { background: #fff; color: #211f1c; }
+}
+

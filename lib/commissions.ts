@@ -6,7 +6,8 @@ export type Commission = {
   id: string; name: string; email: string; title: string; description: string; budget: string; timeline: string;
   assets: string; status: string; note: string; created_at: string; updated_at: string; idempotency_key: string; payload_hash: string;
 };
-export type Message = { id: string; request_id: string; sender: "admin" | "client"; body: string; created_at: string };
+export type Message = { id: string; request_id: string; sender: "admin" | "client"; body: string; attachment_ids?: string; created_at: string };
+export type CommissionReview = { id: string; request_id: string; rating: number; body: string; state: "new" | "reviewed" | "hidden"; created_at: string; updated_at: string };
 export type StoredFile = { id: string; request_id: string | null; storage_key: string; name: string; mime: string; size: number; public: number; created_at: string };
 export type Identity = { role: "admin" | "client" | "anonymous"; requestId?: string; sessionHash?: string; adminSessionHash?: string; expiresAt?: string };
 export type Mail = { id: string; request_id: string | null; recipient: string; subject: string; body: string; reply_to: string | null; kind: string; state: string; attempts: number; error: string | null; created_at: string; last_attempt_at: string | null; next_attempt_at: string | null; provider_id: string | null; sent_at: string | null };
@@ -188,7 +189,12 @@ export async function authorizedCommission(request: Request, id: string): Promis
 export function serializeCommission(c: Commission) {
   return { id: c.id, name: c.name, email: c.email, title: c.title, description: c.description, budget: c.budget, timeline: c.timeline, assets: c.assets, status: c.status, note: c.note, createdAt: c.created_at, updatedAt: c.updated_at };
 }
-export const serializeMessage = (m: Message) => ({ id: m.id, sender: m.sender, body: m.body, createdAt: m.created_at });
+export const serializeMessage = (m: Message) => {
+  let attachmentIds: string[] = [];
+  try { attachmentIds = JSON.parse(m.attachment_ids || "[]") as string[]; } catch { attachmentIds = []; }
+  return { id: m.id, sender: m.sender, body: m.body, attachmentIds, createdAt: m.created_at };
+};
+export const serializeReview = (review: CommissionReview) => ({ id: review.id, rating: review.rating, body: review.body, state: review.state, createdAt: review.created_at, updatedAt: review.updated_at });
 export const serializeFile = (f: StoredFile) => ({ id: f.id, name: f.name, mime: f.mime, size: f.size, url: `/api/files/${f.id}` });
 export function serializeMail(m: Mail) { return { id: m.id, recipient: m.recipient, kind: m.kind, state: m.state, attempts: m.attempts, error: m.error, createdAt: m.created_at, sentAt: m.sent_at }; }
 
@@ -326,3 +332,4 @@ export async function multipart(request: Request, maxSize = 21 * 1024 * 1024, al
     throw new ApiError(400, "The uploaded form could not be read.");
   }
 }
+

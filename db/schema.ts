@@ -33,9 +33,15 @@ export const files = sqliteTable("files", {
 
 export const messages = sqliteTable("messages", {
   id: text("id").primaryKey(), requestId: text("request_id").notNull().references(() => commissionRequests.id),
-  sender: text("sender").notNull(), body: text("body").notNull(), idempotencyKey: text("idempotency_key").notNull(),
+  sender: text("sender").notNull(), body: text("body").notNull(), attachmentIds: text("attachment_ids").notNull().default("[]"), idempotencyKey: text("idempotency_key").notNull(),
   createdAt: text("created_at").notNull(),
 }, (t) => [uniqueIndex("message_duplicate").on(t.requestId, t.sender, t.idempotencyKey), index("messages_request_created").on(t.requestId, t.createdAt)]);
+
+export const commissionReviews = sqliteTable("commission_reviews", {
+  id: text("id").primaryKey(), requestId: text("request_id").notNull().unique().references(() => commissionRequests.id),
+  rating: integer("rating").notNull(), body: text("body").notNull().default(""), state: text("state").notNull().default("new"),
+  createdAt: text("created_at").notNull(), updatedAt: text("updated_at").notNull(),
+}, (t) => [index("reviews_state_created").on(t.state, t.createdAt)]);
 
 export const siteContent = sqliteTable("site_content", {
   id: text("id").primaryKey(), value: text("value").notNull(), updatedAt: text("updated_at").notNull(),
@@ -60,3 +66,4 @@ export const storedChunks = sqliteTable("stored_chunks", {
   storageKey: text("storage_key").notNull().references(() => storedObjects.storageKey),
   chunkIndex: integer("chunk_index").notNull(), data: blob("data").notNull(),
 }, (t) => [uniqueIndex("stored_chunk_position").on(t.storageKey, t.chunkIndex)]);
+
