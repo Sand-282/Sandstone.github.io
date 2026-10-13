@@ -24,18 +24,16 @@ async function loadDetails(id: string, commission: Commission, isAdmin: boolean,
       database().prepare("SELECT * FROM commission_reviews WHERE request_id=?").bind(id).first<CommissionReview>(),
     ]);
     const project = (await getProject(commission)).state;
+    let unreadMessages = false;
     if (isAdmin) {
       const latestClientMessage = messages.results.find(message => message.sender === "client");
       if (latestClientMessage) {
         const row = await database().prepare("SELECT value FROM site_content WHERE id='admin:reads'").first<{value:string}>();
         let reads: Record<string,string> = {}; try { reads = row ? JSON.parse(row.value) as Record<string,string> : {}; } catch { reads = {}; }
-        if ((reads[id]||"") < latestClientMessage.created_at) {
-          reads[id] = latestClientMessage.created_at;
-          await database().prepare("INSERT INTO site_content(id,value,updated_at) VALUES('admin:reads',?,?) ON CONFLICT(id) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(JSON.stringify(reads),NOW()).run();
-        }
+        unreadMessages = latestClientMessage.created_at > (reads[id] || "");
       }
     }
-    return json({ request: { ...serializeCommission(commission), archived }, project, review: review ? serializeReview(review) : null, messages: messages.results.slice(0, 500).reverse().map(serializeMessage), hasOlderMessages: messages.results.length > 500, files: files.results.map(serializeFile), ...(notifications ? { notifications: notifications.results.map(serializeMail) } : {}) });
+    return json({ request: { ...serializeCommission(commission), archived, ...(isAdmin ? { unreadMessages } : {}) }, project, review: review ? serializeReview(review) : null, messages: messages.results.slice(0, 500).reverse().map(serializeMessage), hasOlderMessages: messages.results.length > 500, files: files.results.map(serializeFile), ...(notifications ? { notifications: notifications.results.map(serializeMail) } : {}) });
 }
 
 export async function PATCH(request: Request, context: Context) {
